@@ -1,0 +1,21 @@
+```yaml
+---
+description: Các quy định cấu hình hệ thống triển khai suy luận LLM thông qua Docker Compose và engine vLLM.
+globs: docker-compose*.yml, infrastructure/**/*.sh
+---
+
+# Quy Tắc Triển Khai Hạ Tầng vLLM & Docker
+
+## 1. Cấu Hình Hình Ảnh & Cổng Giao Tiếp
+- Sử dụng hình ảnh Docker chính thức: `vllm/vllm-openai:latest`. Đây là bắt buộc để duy trì tính tương thích với API của OpenAI.
+- Quản lý bộ nhớ đệm: Luôn cấu hình Volume mount thư mục `/root/.cache/huggingface` để hệ thống không phải tải lại các checkpoint mô hình nặng hàng chục Gigabyte khi khởi động lại.
+
+## 2. Tối Ưu Hóa Tham Số Dòng Lệnh vLLM (Command Arguments)
+Khi viết thuộc tính `command` trong tệp `docker-compose.yml`, hệ thống AI phải tích hợp các cờ (flags) sau:
+- `--gpu-memory-utilization 0.90`: Thiết lập này là bắt buộc để dành 90% VRAM cho mô hình và KV Cache, giữ 10% an toàn chống lỗi Out-Of-Memory (OOM).
+- `--dtype bfloat16`: Tối ưu hóa tính toán trên các GPU thế hệ mới, tiết kiệm bộ nhớ mà không suy giảm chất lượng.
+- `--max-model-len`: Giới hạn kích thước cửa sổ ngữ cảnh để phù hợp với tài nguyên VRAM khả dụng (Ví dụ: 4096 hoặc 8192).
+
+## 3. Quản Lý Đa GPU và Tải Phân Tán
+- **Đơn mô hình, Đa GPU:** Nếu cần triển khai một mô hình lớn (VD: Llama-3-70B), phải cấu hình cờ `--tensor-parallel-size <N>` (với N là số lượng GPU vật lý).
+- **Đa mô hình (Multi-Proposer):** Khi chạy song song nhiều mô hình (VD: Llama 3 và Qwen) trên các container khác nhau, hãy phân định thiết bị GPU rõ ràng qua thẻ `device_ids` trong Docker Compose và thiết lập proxy Nginx để định tuyến request tới các cổng `8000`, `8001`.

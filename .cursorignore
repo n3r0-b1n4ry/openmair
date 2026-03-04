@@ -1,0 +1,7 @@
+# Các thư mục và tệp tin không cần thiết cho Cursor IDE
+venv/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+logs/

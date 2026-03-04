@@ -1,0 +1,33 @@
+```yaml
+---
+description: Hướng dẫn kỹ thuật và thực hành tốt nhất cho việc phát triển ứng dụng dựa trên LangChain và LangGraph.
+globs: **/*.py
+---
+
+# Quy Tắc Phát Triển LangChain & LangGraph
+
+## 1. Sử Dụng LangChain Expression Language (LCEL)
+- **Bắt buộc:** Bạn phải luôn sử dụng LCEL với toán tử pipe (`|`) để nối các thành phần.
+- **Nghiêm cấm:** Tuyệt đối không sử dụng `LLMChain` hoặc các lớp thiết kế kiểu cũ, vì chúng đã bị deprecated và không hỗ trợ streaming tốt.
+
+*Mẫu thiết kế chuẩn:*
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
+from langchain_core.output_parsers import PydanticOutputParser
+
+prompt = ChatPromptTemplate.from_messages()
+llm = ChatOpenAI(model="gpt-4o", temperature=0)
+parser = PydanticOutputParser(pydantic_object=IncidentReport)
+
+chain = prompt | llm | parser
+
+## 2. Quản Lý Trạng Thái LangGraph (Stateful Graph)
+- Mọi đồ thị LangGraph phải bắt đầu bằng việc định nghĩa một `TypedDict` cho State.
+- State này phải chia sẻ bối cảnh của sự cố, chứa mảng danh sách các thông điệp (`messages`), danh sách các bản nháp từ Proposer (`proposals`), và phán quyết cuối cùng.
+- Khi xây dựng các hàm Node, luôn thiết kế để chúng nhận tham số đầu vào là `state` và trả về một phần của state cần cập nhật (partial state update).
+
+## 3. Định Dạng Đầu Ra Có Cấu Trúc (Structured Outputs)
+- Khi gọi mô hình Giám khảo (Oracle), luôn yêu cầu mô hình xuất ra dữ liệu có cấu trúc bằng cách sử dụng `with_structured_output()` tích hợp sẵn Pydantic schema. Điều này đảm bảo việc trích xuất điểm số (Score) và nguyên nhân (Root Cause) không bị lỗi cú pháp JSON.
+
+## 4. Giám Sát Và Truy Vết (Tracing)
+- Đảm bảo việc khởi tạo môi trường có cấu hình đầy đủ biến môi trường của LangSmith (`LANGSMITH_TRACING=true`). Mã nguồn không cần phải gọi API trực tiếp, chỉ cần cấu hình đúng biến môi trường để LangChain tự động hook vào LangSmith.

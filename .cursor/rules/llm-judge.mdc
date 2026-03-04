@@ -1,0 +1,29 @@
+```yaml
+---
+description: Hướng dẫn thiết kế kỹ thuật câu lệnh (Prompt Engineering) chuyên sâu cho module LLM-as-a-Judge nhằm giảm thiểu sai lệch (biases).
+globs: prompts/*.py, prompts/*.md
+---
+
+# Kỹ Thuật Viết Prompt Dành Cho Module LLM-as-a-Judge
+
+## 1. Phòng Chống Độ Lệch Vị Trí (Position Bias)
+- LLM có xu hướng thiên vị văn bản xuất hiện đầu tiên. 
+- Mẫu câu lệnh (System Prompt) phải có chỉ thị nhấn mạnh: "Bạn phải giữ sự trung lập tuyệt đối. Không được để thứ tự xuất hiện của các báo cáo ảnh hưởng đến quyết định chấm điểm."
+- Khi viết mã Python để sinh Prompt, yêu cầu AI tích hợp hàm `random.shuffle()` để tráo đổi ngẫu nhiên thứ tự của các giải pháp Proposer A và B trước khi chèn vào chuỗi văn bản.
+
+## 2. Phòng Chống Độ Lệch Độ Dài (Verbosity Bias)
+- Mô hình giám khảo thường cho điểm cao các giải pháp dài dòng.
+- Prompt phải tích hợp chỉ thị: "Bỏ qua độ dài của câu trả lời. Một giải pháp ngắn gọn, cung cấp chính xác dòng lệnh khắc phục sự cố cần được ưu tiên hơn một bản báo cáo dài dòng nhưng thiếu tính thực thi."
+
+## 3. Khử Danh Tính (Anonymization) Chống Self-Enhancement
+- Trước khi đưa giải pháp của các Candidate LLMs vào Prompt, mã nguồn phải loại bỏ mọi định danh liên quan đến tên mô hình (Ví dụ: thay thế "Đây là phản hồi từ Qwen" bằng "Phản hồi từ Trợ lý A").
+
+## 4. Bắt Buộc Sử Dụng Suy Luận Chuỗi Tư Duy (Chain-of-Thought)
+- Tuyệt đối không yêu cầu mô hình giám khảo đưa ra điểm số ngay lập tức.
+- Prompt phải cấu trúc rõ quy trình yêu cầu giám khảo tự phân tích:
+  1. Tự phân tích tập log hệ thống được cung cấp.
+  2. Chỉ ra các lỗi sai trong suy luận của Trợ lý A.
+  3. Chỉ ra các lỗi sai trong suy luận của Trợ lý B.
+  4. Viết ra giải pháp tối ưu được dung hợp từ các điểm mạnh.
+  5. Đưa ra phán quyết cuối cùng (Điểm số cho từng mô hình).
+- Việc bắt buộc giám khảo tự tư duy sẽ ngăn chặn việc nó bị đánh lừa bởi dữ liệu sai lệch (hallucination) từ các mô hình cấp dưới.

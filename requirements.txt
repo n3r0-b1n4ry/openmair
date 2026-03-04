@@ -1,0 +1,42 @@
+# Core AI Frameworks
+langchain>=0.3.0
+langchain-openai>=0.2.0
+langchain-anthropic>=0.2.0
+langchain-google-genai>=2.0.0
+langchain-core>=0.3.0
+langgraph>=0.2.0
+
+# LLM Providers
+deepseek-openai>=1.0.0
+ollama>=0.4.0
+
+# Error Handling & Retry
+tenacity>=8.2.0
+
+# Rate Limiting
+slowapi>=0.1.9
+redis>=5.0.0
+
+# Monitoring & Observability
+opentelemetry-api>=1.20.0
+opentelemetry-sdk>=1.20.0
+opentelemetry-instrumentation-langchain>=0.41.0
+prometheus-client>=0.19.0
+
+# Evaluation Frameworks
+deepeval>=0.21.0
+ragas>=0.1.0
+prometheus-eval>=0.1.0
+
+# Vector Database
+pymilvus>=2.3.0
+pinecone-client>=3.0.0
+
+# ELK Stack
+elasticsearch>=8.11.0
+logstash>=8.11.0
+
+# Utilities
+pydantic>=2.5.0
+docker>=7.0.0
+python-dotenv>=1.0.0
