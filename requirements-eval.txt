@@ -1,0 +1,8 @@
+# Evaluation Frameworks (tùy chọn)
+deepeval>=0.21.0
+ragas>=0.1.0
+prometheus-eval>=0.1.0
+
+# Rate Limiting & Log forwarding (nếu dùng HTTP API / ELK nâng cao)
+slowapi>=0.1.9
+logstash>=8.11.0

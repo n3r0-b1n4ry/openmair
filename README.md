@@ -16,49 +16,6 @@ Hệ thống bao gồm ba loại tác nhân chính:
 
 Toàn bộ quy trình được điều phối bởi LangGraph, duy trì một trạng thái toàn cục dùng chung cho tất cả các tác nhân.
 
-## Các Model LLM được sử dụng
-
-### Proposer Models (Candidate LLMs)
-Hệ thống sử dụng các model mã nguồn mở mới nhất và hiệu quả nhất:
-
-1. **Qwen 2.5 72B** - Model mã nguồn mở mạnh mẽ nhất hiện nay từ Alibaba
-   - Hiệu suất vượt trội trong các tác vụ reasoning
-   - Hỗ trợ context window lên đến 32K tokens
-   - Tối ưu hóa cho các tác vụ phân tích log phức tạp
-
-2. **Llama 3.1 70B** - Model mã nguồn mở phổ biến nhất từ Meta
-   - Hiệu suất cân bằng giữa tốc độ và chất lượng
-   - Hỗ trợ đa ngôn ngữ tốt
-   - Tối ưu hóa cho các tác vụ phân tích sự cố
-
-3. **Mistral Large 2** - Model mã nguồn mở hiệu quả cao từ Mistral AI
-   - Hiệu suất vượt trội trong các tác vụ code generation
-   - Hỗ trợ context window lớn
-   - Tối ưu hóa cho các tác vụ kỹ thuật
-
-4. **DeepSeek V3** - Model mã nguồn mở mới nhất từ DeepSeek AI
-   - Hiệu suất cao trong các tác vụ reasoning
-   - Hỗ trợ đa ngôn ngữ
-   - Tối ưu hóa cho các tác vụ phân tích phức tạp
-
-### Judge Model (Oracle LLM)
-Hệ thống hỗ trợ các model cao cấp nhất cho vai trò Judge:
-
-1. **GPT-4o** - Model mạnh mẽ nhất từ OpenAI
-   - Hiệu suất vượt trội trong các tác vụ reasoning
-   - Hỗ trợ Chain-of-Thought
-   - Tối ưu hóa cho các tác vụ đánh giá phức tạp
-
-2. **Claude 3.5 Sonnet** - Model tốt nhất cho reasoning từ Anthropic
-   - Hiệu suất vượt trội trong các tác vụ suy luận
-   - Hỗ trợ thinking capabilities
-   - Tối ưu hóa cho các tác vụ đánh giá chi tiết
-
-3. **Gemini 2.5 Pro** - Model mới nhất từ Google
-   - Hiệu suất cao trong các tác vụ đa phương thức
-   - Hỗ trợ context window lớn
-   - Tối ưu hóa cho các tác vụ đánh giá tổng hợp
-
 ## Cấu trúc thư mục
 
 ```
@@ -70,16 +27,19 @@ Hệ thống hỗ trợ các model cao cấp nhất cho vai trò Judge:
 ├── orchestrator/           # Điều phối viên
 │   ├── state.py            # Định nghĩa trạng thái
 │   ├── router.py           # Bộ định tuyến
-│   └── graph.py            # Đồ thị quy trình
+│   └── graph.py            # Đồ thị quy trình (sử dụng router)
 ├── infrastructure/         # Cấu hình hạ tầng
-│   ├── docker-compose.yml  # Cấu hình Docker Compose
+│   ├── docker-compose.yml  # Cấu hình Docker Compose đầy đủ
+│   ├── docker-compose.light.yml # Cấu hình nhẹ cho lab 1 GPU
 │   └── nginx.conf          # Cấu hình Nginx
 ├── prompts/                # Các mẫu prompt
 ├── evals/                  # Bộ công cụ đánh giá
 ├── .cursor/
 │   └── rules/              # Quy tắc cho Cursor IDE
 ├── AGENTS.md               # Tổng quan kiến trúc
-├── requirements.txt        # Thư viện phụ thuộc
+├── requirements.txt        # Thư viện phụ thuộc (đầy đủ)
+├── requirements-core.txt   # Thư viện cốt lõi để chạy hệ thống
+├── requirements-eval.txt   # Thư viện cho các framework đánh giá (tùy chọn)
 ├── main.py                 # Tệp chạy chính
 └── README.md               # Tài liệu hướng dẫn
 ```
@@ -92,20 +52,31 @@ Hệ thống hỗ trợ các model cao cấp nhất cho vai trò Judge:
 
 ## Cài đặt
 
-1. Cài đặt các thư viện Python:
+1. Cài đặt các thư viện Python cơ bản để chạy hệ thống:
    ```bash
-   pip install -r requirements.txt
+   pip install -r requirements-core.txt
    ```
 
-2. Cấu hình biến môi trường:
+2. (Tuỳ chọn) Cài thêm các framework đánh giá nếu muốn chạy đánh giá nâng cao:
+   ```bash
+   pip install -r requirements-eval.txt
+   ```
+
+3. Cấu hình biến môi trường:
    - Copy tệp `config.py` và chỉnh sửa các thông số cần thiết
    - Đảm bảo đã cấu hình `OPENAI_API_KEY` cho Judge Agent
 
-3. Khởi động các dịch vụ vLLM:
-   ```bash
-   cd infrastructure
-   docker-compose up -d
-   ```
+4. Khởi động các dịch vụ vLLM và hạ tầng:
+   - Đầy đủ (4 model, ELK, Milvus, Prometheus, Grafana):
+     ```bash
+     cd infrastructure
+     docker-compose up -d
+     ```
+   - Nhẹ cho lab 1 GPU (1 model + Redis + Elasticsearch + Kibana):
+     ```bash
+     cd infrastructure
+     docker-compose -f docker-compose.light.yml up -d
+     ```
 
 ## Sử dụng
 
@@ -116,7 +87,7 @@ python main.py
 
 ## Cấu hình
 
-Các thông số cấu hình có thể được chỉnh sửa trong tệp `config.py`:
+Các thông số cấu hình có thể được chỉnh sửa trong tệp `config.py`.
 
 ### API Keys
 - `OPENAI_API_KEY`: API key cho OpenAI (bắt buộc nếu sử dụng GPT-4o)
@@ -149,7 +120,7 @@ Các thông số cấu hình có thể được chỉnh sửa trong tệp `confi
 ## Tùy chỉnh
 
 - Để thay đổi các mô hình LLM được sử dụng, chỉnh sửa trong `agents/proposers.py` và `agents/judge.py`
-- Để điều chỉnh cấu hình Docker, chỉnh sửa `infrastructure/docker-compose.yml`
+- Để điều chỉnh cấu hình Docker, chỉnh sửa `infrastructure/docker-compose.yml` hoặc `infrastructure/docker-compose.light.yml`
 - Để thay đổi quy tắc cho Cursor IDE, chỉnh sửa các tệp trong `.cursor/rules/`
 
 ## Đóng góp
