@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # Dịch vụ vLLM cho mô hình Qwen 2.5 72B (Proposer) - Model mã nguồn mở mạnh mẽ nhất
+  # Có thể thay đổi thành Llama 3.3 70B bằng cách sửa model_id
+  vllm-qwen25:
+    image: vllm/vllm-openai:latest
+    container_name: vllm-qwen25-light
+    ports:
+      - "8000:8000"
+    volumes:
+      - ~/.cache/huggingface:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: [
+      "--model", "Qwen/Qwen2.5-72B-Instruct",
+      "--host", "0.0.0.0",
+      "--port", "8000",
+      "--gpu-memory-utilization", "0.95",
+      "--dtype", "bfloat16",
+      "--max-model-len", "8192",
+      "--tensor-parallel-size", "1"
+    ]
+    networks:
+      - aiops_network
+    restart: unless-stopped
+
+  # Redis Service - Caching và Rate Limiting
+  redis:
+    image: redis:7-alpine
+    container_name: redis-cache-light
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redispassword}
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - aiops_network
+    restart: unless-stopped
+
+networks:
+  aiops_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  redis_data:
+    driver: local
+
+# Sử dụng lệnh sau để chạy:
+# docker-compose -f infrastructure/docker-compose.light.yml up -d
+#
+# Để chạy với Llama 3.3 thay vì Qwen 2.5:
+# 1. Sửa model_id trong command thành "meta-llama/Llama-3.3-70B-Instruct"
+# 2. Sửa container_name thành "vllm-llama33-light"
+# 3. Restart: docker-compose -f infrastructure/docker-compose.light.yml up -d --force-recreate

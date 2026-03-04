@@ -33,8 +33,6 @@ try:
         CollectionSchema,
         DataType,
         Collection,
-        AnnSearchParam,
-        SearchResult
     )
     MILVUS_AVAILABLE = True
 except ImportError:

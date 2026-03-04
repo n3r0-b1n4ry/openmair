@@ -1,6 +1,9 @@
 """
 Advanced Error Handling & Retry Handler cho hệ thống AIOps
+
+Hỗ trợ cả sync và async functions.
 """
+import asyncio
 import logging
 import time
 from functools import wraps
@@ -55,7 +58,7 @@ class CircuitBreaker:
     
     def call(self, func: Callable) -> Callable:
         """
-        Decorator để wrap function với circuit breaker
+        Decorator để wrap function với circuit breaker (hỗ trợ cả sync và async)
         
         Args:
             func (Callable): Function cần wrap
@@ -63,28 +66,52 @@ class CircuitBreaker:
         Returns:
             Callable: Function đã được wrap
         """
-        @wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
-            if self.state == CircuitState.OPEN:
-                if self._should_attempt_reset():
-                    self.state = CircuitState.HALF_OPEN
-                    logger.info("Circuit breaker chuyển sang HALF_OPEN state")
-                else:
-                    raise Exception("Circuit breaker đang OPEN, request bị chặn")
+        if asyncio.iscoroutinefunction(func):
+            @wraps(func)
+            async def async_wrapper(*args, **kwargs) -> Any:
+                if self.state == CircuitState.OPEN:
+                    if self._should_attempt_reset():
+                        self.state = CircuitState.HALF_OPEN
+                        logger.info("Circuit breaker chuyển sang HALF_OPEN state")
+                    else:
+                        raise Exception("Circuit breaker đang OPEN, request bị chặn")
+                
+                try:
+                    result = await func(*args, **kwargs)
+                    
+                    if self.state == CircuitState.HALF_OPEN:
+                        self._reset()
+                        logger.info("Circuit breaker đã reset về CLOSED state")
+                    
+                    return result
+                except self.expected_exception as e:
+                    self._on_failure()
+                    raise e
             
-            try:
-                result = func(*args, **kwargs)
+            return async_wrapper
+        else:
+            @wraps(func)
+            def wrapper(*args, **kwargs) -> Any:
+                if self.state == CircuitState.OPEN:
+                    if self._should_attempt_reset():
+                        self.state = CircuitState.HALF_OPEN
+                        logger.info("Circuit breaker chuyển sang HALF_OPEN state")
+                    else:
+                        raise Exception("Circuit breaker đang OPEN, request bị chặn")
                 
-                if self.state == CircuitState.HALF_OPEN:
-                    self._reset()
-                    logger.info("Circuit breaker đã reset về CLOSED state")
-                
-                return result
-            except self.expected_exception as e:
-                self._on_failure()
-                raise e
-        
-        return wrapper
+                try:
+                    result = func(*args, **kwargs)
+                    
+                    if self.state == CircuitState.HALF_OPEN:
+                        self._reset()
+                        logger.info("Circuit breaker đã reset về CLOSED state")
+                    
+                    return result
+                except self.expected_exception as e:
+                    self._on_failure()
+                    raise e
+            
+            return wrapper
     
     def _should_attempt_reset(self) -> bool:
         """Kiểm tra xem có nên thử reset circuit không"""
@@ -128,6 +155,8 @@ def with_retry(
     """
     Decorator để thêm retry logic với exponential backoff
     
+    tenacity >= 8.2.0 tự động hỗ trợ async functions.
+    
     Args:
         max_attempts (int): Số lần thử tối đa
         min_wait (float): Thời gian chờ tối thiểu (giây)
@@ -135,17 +164,13 @@ def with_retry(
         exponential_base (int): Cơ số cho exponential backoff
     """
     def decorator(func: Callable) -> Callable:
-        @wraps(func)
-        @retry(
+        retry_decorator = retry(
             stop=stop_after_attempt(max_attempts),
             wait=wait_exponential(multiplier=exponential_base, min=min_wait, max=max_wait),
             before_sleep=before_sleep_log(logger, logging.WARNING),
             reraise=True
         )
-        def wrapper(*args, **kwargs) -> Any:
-            return func(*args, **kwargs)
-        
-        return wrapper
+        return retry_decorator(func)
     return decorator
 
 
@@ -244,30 +269,44 @@ class RateLimiter:
             return 0.0
         
         oldest_request = self.requests[0]
-        wait_time = self.time_window - (time.time() - oldest_request)
-        return max(0.0, wait_time)
+        wait = self.time_window - (time.time() - oldest_request)
+        return max(0.0, wait)
 
 
 def with_rate_limiter(rate_limiter: RateLimiter):
     """
-    Decorator để thêm rate limiting
+    Decorator để thêm rate limiting (hỗ trợ cả sync và async)
     
     Args:
         rate_limiter (RateLimiter): Rate limiter instance
     """
     def decorator(func: Callable) -> Callable:
-        @wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
-            if not rate_limiter.allow_request():
-                wait_time = rate_limiter.wait_time()
-                logger.warning(
-                    f"Rate limit exceeded. Cần chờ {wait_time:.2f} giây"
-                )
-                time.sleep(wait_time)
+        if asyncio.iscoroutinefunction(func):
+            @wraps(func)
+            async def async_wrapper(*args, **kwargs) -> Any:
+                if not rate_limiter.allow_request():
+                    wt = rate_limiter.wait_time()
+                    logger.warning(
+                        f"Rate limit exceeded. Cần chờ {wt:.2f} giây"
+                    )
+                    await asyncio.sleep(wt)
+                
+                return await func(*args, **kwargs)
             
-            return func(*args, **kwargs)
-        
-        return wrapper
+            return async_wrapper
+        else:
+            @wraps(func)
+            def wrapper(*args, **kwargs) -> Any:
+                if not rate_limiter.allow_request():
+                    wt = rate_limiter.wait_time()
+                    logger.warning(
+                        f"Rate limit exceeded. Cần chờ {wt:.2f} giây"
+                    )
+                    time.sleep(wt)
+                
+                return func(*args, **kwargs)
+            
+            return wrapper
     return decorator
 
 
@@ -296,10 +335,11 @@ def with_all_protections(
         rate_limiter (Optional[RateLimiter]): Rate limiter instance
     """
     def decorator(func: Callable) -> Callable:
+        # Sử dụng biến local để tránh UnboundLocalError
+        _rate_limiter = rate_limiter if rate_limiter is not None else llm_rate_limiter
+        
         # Áp dụng rate limiting
-        if rate_limiter is None:
-            rate_limiter = llm_rate_limiter
-        func_with_rl = with_rate_limiter(rate_limiter)(func)
+        func_with_rl = with_rate_limiter(_rate_limiter)(func)
         
         # Áp dụng retry
         func_with_retry = with_retry(max_attempts, min_wait, max_wait)(func_with_rl)

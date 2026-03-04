@@ -54,7 +54,7 @@ class ModelRouter:
         self._initialize_fallback_chain()
     
     def _initialize_models(self):
-        """Khởi tạo danh sách các model có sẵn"""
+        """Khởi tạo danh sách các model có sẵn (2026)"""
         # Models cho task LOW complexity (nhanh, rẻ)
         self.models["gemini-1.5-flash"] = ModelCapability(
             name="Gemini 1.5 Flash",
@@ -109,7 +109,7 @@ class ModelRouter:
             supports_streaming=True
         )
         
-        # Models cho task HIGH complexity
+        # Models cho task HIGH complexity (2026 updates)
         self.models["qwen-2.5-72b"] = ModelCapability(
             name="Qwen 2.5 72B",
             model_id="Qwen/Qwen2.5-72B-Instruct",
@@ -123,20 +123,33 @@ class ModelRouter:
             supports_streaming=True
         )
         
-        self.models["llama-3.1-70b"] = ModelCapability(
-            name="Llama 3.1 70B",
-            model_id="meta-llama/Meta-Llama-3.1-70B-Instruct",
+        self.models["llama-3.3-70b"] = ModelCapability(
+            name="Llama 3.3 70B Instruct",  # Cập nhật từ Llama 3.1
+            model_id="meta-llama/Llama-3.3-70B-Instruct",
             provider="openai",
             complexity_level=TaskComplexity.HIGH,
             cost_per_1k_tokens=0.00025,
-            avg_latency_ms=900,
-            accuracy_score=0.93,
+            avg_latency_ms=850,  # Nhanh hơn Llama 3.1
+            accuracy_score=0.94,  # Accuracy cao hơn
             max_tokens=128000,
             supports_function_calling=True,
             supports_streaming=True
         )
         
-        # Models cho task CRITICAL complexity
+        self.models["qwq-32b"] = ModelCapability(
+            name="QwQ-32B",  # Model reasoning mới
+            model_id="Qwen/QwQ-32B-Preview",
+            provider="openai",
+            complexity_level=TaskComplexity.HIGH,
+            cost_per_1k_tokens=0.00018,
+            avg_latency_ms=700,
+            accuracy_score=0.93,
+            max_tokens=32768,
+            supports_function_calling=True,
+            supports_streaming=True
+        )
+        
+        # Models cho task CRITICAL complexity (2026 updates)
         self.models["deepseek-r1"] = ModelCapability(
             name="DeepSeek R1",
             model_id="deepseek-reasoner",
@@ -145,6 +158,19 @@ class ModelRouter:
             cost_per_1k_tokens=0.00055,
             avg_latency_ms=1500,
             accuracy_score=0.97,
+            max_tokens=8192,
+            supports_function_calling=True,
+            supports_streaming=True
+        )
+        
+        self.models["deepseek-r1-distill-llama-70b"] = ModelCapability(
+            name="DeepSeek R1 Distill Llama 70B",  # Model reasoning mạnh mẽ
+            model_id="deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
+            provider="openai",
+            complexity_level=TaskComplexity.CRITICAL,
+            cost_per_1k_tokens=0.0003,
+            avg_latency_ms=1200,
+            accuracy_score=0.96,
             max_tokens=8192,
             supports_function_calling=True,
             supports_streaming=True
@@ -163,33 +189,74 @@ class ModelRouter:
             supports_streaming=True
         )
         
-        self.models["claude-3.5-sonnet"] = ModelCapability(
-            name="Claude 3.5 Sonnet",
-            model_id="claude-3-5-sonnet",
+        self.models["claude-3.7-sonnet"] = ModelCapability(
+            name="Claude 3.7 Sonnet",  # Cập nhật từ Claude 3.5 - hybrid reasoning tốt nhất
+            model_id="claude-3-7-sonnet",
             provider="anthropic",
             complexity_level=TaskComplexity.CRITICAL,
-            cost_per_1k_tokens=0.003,
-            avg_latency_ms=1200,
-            accuracy_score=0.97,
+            cost_per_1k_tokens=0.0035,
+            avg_latency_ms=1100,
+            accuracy_score=0.98,
             max_tokens=200000,
             supports_function_calling=True,
             supports_streaming=True
         )
         
-        logger.info(f"Đã khởi tạo {len(self.models)} models cho routing")
+        self.models["o3-mini"] = ModelCapability(
+            name="OpenAI o3-mini",  # Model reasoning mới cho logic code/log cực khó
+            model_id="o3-mini",
+            provider="openai",
+            complexity_level=TaskComplexity.CRITICAL,
+            cost_per_1k_tokens=0.0011,  # Thinking tokens được tính riêng
+            avg_latency_ms=2000,  # Chậm hơn do reasoning
+            accuracy_score=0.99,
+            max_tokens=100000,
+            supports_function_calling=True,
+            supports_streaming=False  # o3-mini không hỗ trợ streaming
+        )
+        
+        logger.info(f"Đã khởi tạo {len(self.models)} models cho routing (2026)")
     
     def _initialize_fallback_chain(self):
-        """Khởi tạo chuỗi fallback khi model fail"""
+        """Khởi tạo chuỗi fallback khi model fail (2026)"""
         # Fallback chain cho mỗi complexity level
         self.fallback_chain = [
             # CRITICAL -> HIGH -> MEDIUM -> LOW
-            ["deepseek-r1", "gpt-4o", "claude-3.5-sonnet", "qwen-2.5-72b", "deepseek-v3", "gpt-4o-mini", "gemini-1.5-flash"],
+            [
+                "claude-3.7-sonnet",  # Default Judge - hybrid reasoning tốt nhất
+                "o3-mini",  # Fallback cho logic code/log cực khó
+                "deepseek-r1-distill-llama-70b",  # Reasoning mạnh mẽ
+                "deepseek-r1",
+                "gpt-4o",
+                "qwen-2.5-72b",
+                "llama-3.3-70b",
+                "qwq-32b",
+                "deepseek-v3",
+                "gpt-4o-mini",
+                "gemini-1.5-flash"
+            ],
             # HIGH -> MEDIUM -> LOW
-            ["qwen-2.5-72b", "llama-3.1-70b", "deepseek-v3", "gpt-4o-mini", "gemini-1.5-flash"],
+            [
+                "qwen-2.5-72b",
+                "llama-3.3-70b",  # Cập nhật từ Llama 3.1
+                "qwq-32b",  # Thêm model reasoning mới
+                "deepseek-v3",
+                "gpt-4o-mini",
+                "gemini-1.5-flash",
+                "llama3.3"
+            ],
             # MEDIUM -> LOW
-            ["deepseek-v3", "gpt-4o-mini", "gemini-1.5-flash", "llama3.3"],
+            [
+                "deepseek-v3",
+                "gpt-4o-mini",
+                "gemini-1.5-flash",
+                "llama3.3"
+            ],
             # LOW
-            ["gemini-1.5-flash", "llama3.3"]
+            [
+                "gemini-1.5-flash",
+                "llama3.3"
+            ]
         ]
     
     def estimate_task_complexity(

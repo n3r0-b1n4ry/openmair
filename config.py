@@ -2,8 +2,11 @@
 Cấu hình hệ thống AIOps Đa Tác Nhân
 """
 import os
+import logging
 from typing import Optional, Dict, List
 from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
 
 @dataclass
 class ModelConfig:
@@ -33,22 +36,27 @@ class Config:
     LANGCHAIN_API_KEY: str = os.getenv("LANGCHAIN_API_KEY", "")
     LANGCHAIN_PROJECT: str = os.getenv("LANGCHAIN_PROJECT", "aiops-moa-system")
     
-    # Cấu hình vLLM endpoints cho các model mã nguồn mở
-    VLLM_QWEN_URL: str = os.getenv("VLLM_QWEN_URL", "http://localhost:8000")
-    VLLM_LLAMA3_URL: str = os.getenv("VLLM_LLAMA3_URL", "http://localhost:8001")
-    VLLM_MISTRAL_URL: str = os.getenv("VLLM_MISTRAL_URL", "http://localhost:8002")
-    VLLM_DEEPSEEK_URL: str = os.getenv("VLLM_DEEPSEEK_URL", "http://localhost:8003")
+    # Cấu hình vLLM endpoints cho các model mã nguồn mở (2026)
+    VLLM_QWEN_URL: str = os.getenv("VLLM_QWEN_URL", "http://localhost:8000")  # Qwen 2.5 72B
+    VLLM_LLAMA33_URL: str = os.getenv("VLLM_LLAMA33_URL", "http://localhost:8001")  # Llama 3.3 70B
+    VLLM_QWQ_URL: str = os.getenv("VLLM_QWQ_URL", "http://localhost:8002")  # QwQ-32B
+    VLLM_DEEPSEEK_URL: str = os.getenv("VLLM_DEEPSEEK_URL", "http://localhost:8003")  # DeepSeek V3
+    VLLM_R1_DISTILL_URL: str = os.getenv("VLLM_R1_DISTILL_URL", "http://localhost:8004")  # DeepSeek R1 Distill
     
     # Cấu hình logging
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     
-    # Cấu hình Judge Model (Oracle) - Sử dụng model cao cấp nhất
-    JUDGE_MODEL: str = os.getenv("JUDGE_MODEL", "gpt-4o")
-    JUDGE_ALTERNATIVE: str = os.getenv("JUDGE_ALTERNATIVE", "claude-3-5-sonnet")
+    # Cấu hình Judge Model (Oracle) - Sử dụng model cao cấp nhất (2026)
+    JUDGE_MODEL: str = os.getenv("JUDGE_MODEL", "claude-3-7-sonnet")  # Default: Claude 3.7 Sonnet
+    JUDGE_ALTERNATIVE: str = os.getenv("JUDGE_ALTERNATIVE", "o3-mini")  # Fallback: OpenAI o3-mini
     
     # Cấu hình DeepSeek R1 cho reasoning phức tạp
     DEEPSEEK_R1_MODEL: str = os.getenv("DEEPSEEK_R1_MODEL", "deepseek-reasoner")
     DEEPSEEK_API_KEY: str = os.getenv("DEEPSEEK_API_KEY", "")
+    
+    # Cấu hình OpenAI o3-mini cho reasoning cực khó (2026)
+    OPENAI_O3_MINI_MODEL: str = os.getenv("OPENAI_O3_MINI_MODEL", "o3-mini")
+    O3_REASONING_EFFORT: str = os.getenv("O3_REASONING_EFFORT", "medium")  # low, medium, high
     
     # Cấu hình Llama 3.3 qua Ollama cho xử lý nhanh
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
@@ -57,7 +65,7 @@ class Config:
     # Cấu hình Gemini 1.5 Flash cho phân tích log nhanh
     GEMINI_FLASH_MODEL: str = os.getenv("GEMINI_FLASH_MODEL", "gemini-1.5-flash")
     
-    # Cấu hình các Proposer Models (Candidate LLMs) - Sử dụng các model mã nguồn mở mới nhất
+    # Cấu hình các Proposer Models (Candidate LLMs) - Sử dụng các model mã nguồn mở mới nhất (2026)
     PROPOSER_MODELS: List[ModelConfig] = [
         ModelConfig(
             name="Qwen 2.5 72B",
@@ -68,19 +76,19 @@ class Config:
             provider="openai"
         ),
         ModelConfig(
-            name="Llama 3.1 70B",
-            model_id="meta-llama/Meta-Llama-3.1-70B-Instruct",
+            name="Llama 3.3 70B Instruct",  # Cập nhật từ Llama 3.1 - nhẹ hơn, bench tương đương 400B
+            model_id="meta-llama/Llama-3.3-70B-Instruct",
             api_base="http://localhost:8001/v1",
             temperature=0.7,
             max_tokens=4096,
             provider="openai"
         ),
         ModelConfig(
-            name="Mistral Large 2",
-            model_id="mistralai/Mistral-Large-Instruct-2407",
+            name="QwQ-32B",  # Thay thế Mistral Large 2 - reasoning chain-of-thought tốt hơn
+            model_id="Qwen/QwQ-32B-Preview",
             api_base="http://localhost:8002/v1",
-            temperature=0.7,
-            max_tokens=4096,
+            temperature=0.6,
+            max_tokens=8192,
             provider="openai"
         ),
         ModelConfig(
@@ -92,15 +100,19 @@ class Config:
             provider="openai"
         ),
         ModelConfig(
-            name="DeepSeek R1",
-            model_id="deepseek-reasoner",
-            api_base="https://api.deepseek.com/v1",
+            name="DeepSeek R1 Distill Llama 70B",  # Model reasoning mạnh mẽ
+            model_id="deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
+            api_base="http://localhost:8004/v1",
             temperature=0.6,
             max_tokens=8192,
-            provider="deepseek"
+            provider="openai"
         ),
+    ]
+    
+    # Models phụ trợ (không phải proposer chính)
+    AUXILIARY_MODELS: List[ModelConfig] = [
         ModelConfig(
-            name="Llama 3.3",
+            name="Llama 3.3",  # Qua Ollama cho xử lý nhanh
             model_id="llama3.3",
             api_base="http://localhost:11434/api",
             temperature=0.7,
@@ -114,7 +126,7 @@ class Config:
             temperature=0.7,
             max_tokens=4096,
             provider="google"
-        )
+        ),
     ]
     
     # Cấu hình Executor Model (có thể sử dụng model nhẹ hơn)
@@ -168,7 +180,7 @@ class Config:
             bool: True nếu cấu hình hợp lệ, False nếu không
         """
         if not cls.OPENAI_API_KEY and not cls.ANTHROPIC_API_KEY and not cls.GOOGLE_API_KEY:
-            print("CẢNH BÁO: Không có API key nào được cấu hình (OPENAI_API_KEY, ANTHROPIC_API_KEY, hoặc GOOGLE_API_KEY)!")
+            logger.warning("Không có API key nào được cấu hình (OPENAI_API_KEY, ANTHROPIC_API_KEY, hoặc GOOGLE_API_KEY)!")
             return False
         return True
     

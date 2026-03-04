@@ -47,20 +47,21 @@ async def main():
         logger.info("Kết quả phân tích:")
         logger.info("-" * 30)
         
-        if final_state.final_report:
-            report = final_state.final_report
-            logger.info(f"ID sự cố: {report.incident_id}")
-            logger.info(f"Thời gian: {report.timestamp}")
-            logger.info(f"Mô tả: {report.description}")
-            logger.info(f"Nguyên nhân gốc rễ: {report.root_cause}")
-            logger.info(f"Giải pháp: {report.solution}")
-            logger.info(f"Điểm tin cậy: {report.confidence_score}")
+        final_report = final_state.get("final_report")
+        if final_report:
+            logger.info(f"ID sự cố: {final_report.incident_id}")
+            logger.info(f"Thời gian: {final_report.timestamp}")
+            logger.info(f"Mô tả: {final_report.description}")
+            logger.info(f"Nguyên nhân gốc rễ: {final_report.root_cause}")
+            logger.info(f"Giải pháp: {final_report.solution}")
+            logger.info(f"Điểm tin cậy: {final_report.confidence_score}")
         else:
             logger.warning("Không có báo cáo cuối cùng được tạo.")
         
-        if final_state.executed_actions:
+        executed_actions = final_state.get("executed_actions", [])
+        if executed_actions:
             logger.info("Các hành động đã thực thi:")
-            for action in final_state.executed_actions:
+            for action in executed_actions:
                 logger.info(f"- {action}")
         else:
             logger.warning("Không có hành động nào được thực thi.")

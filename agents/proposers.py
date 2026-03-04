@@ -1,20 +1,16 @@
 import asyncio
 import logging
 import os
-from typing import List, Dict, Any, Optional, Callable
-from langchain_core.messages import HumanMessage
+from typing import List, Dict, Any, Optional
 from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.chat_models import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
-from langchain_core.tools import tool
-from pydantic import BaseModel, Field
 from orchestrator.state import IncidentReport, Proposal
 from config import Config, ModelConfig
-from agents.retry_handler import with_all_protections, llm_circuit_breaker, llm_rate_limiter
-from agents.model_router import model_router, TaskComplexity
+from agents.retry_handler import with_all_protections
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +78,7 @@ Nguyên tắc phân tích:
                 temperature=model_config.temperature,
                 max_tokens=model_config.max_tokens,
                 timeout=model_config.timeout,
-                api_base=model_config.api_base
+                base_url=model_config.api_base
             )
         elif provider == "anthropic":
             return ChatAnthropic(
@@ -175,28 +171,36 @@ class Qwen25Proposer(BaseProposer):
         model_config = config.PROPOSER_MODELS[0]  # Qwen 2.5 72B
         super().__init__(model_config)
 
-class Llama31Proposer(BaseProposer):
-    """Proposer sử dụng mô hình Llama 3.1 70B - Model mã nguồn mở phổ biến nhất"""
+class Llama33Proposer(BaseProposer):
+    """Proposer sử dụng mô hình Llama 3.3 70B - Model mã nguồn mở phổ biến nhất"""
     
     def __init__(self):
         config = Config()
-        model_config = config.PROPOSER_MODELS[1]  # Llama 3.1 70B
+        model_config = config.PROPOSER_MODELS[1]  # Llama 3.3 70B
         super().__init__(model_config)
 
-class MistralLarge2Proposer(BaseProposer):
-    """Proposer sử dụng mô hình Mistral Large 2 - Model mã nguồn mở hiệu quả cao"""
+class QwQProposer(BaseProposer):
+    """Proposer sử dụng mô hình QwQ-32B - Model reasoning chain-of-thought"""
     
     def __init__(self):
         config = Config()
-        model_config = config.PROPOSER_MODELS[2]  # Mistral Large 2
+        model_config = config.PROPOSER_MODELS[2]  # QwQ-32B
         super().__init__(model_config)
 
 class DeepSeekV3Proposer(BaseProposer):
-    """Proposer sử dụng mô hình DeepSeek V3 - Model mã nguồn mở mới nhất từ Trung Quốc"""
+    """Proposer sử dụng mô hình DeepSeek V3 - Model mã nguồn mở mới nhất"""
     
     def __init__(self):
         config = Config()
         model_config = config.PROPOSER_MODELS[3]  # DeepSeek V3
+        super().__init__(model_config)
+
+class DeepSeekR1DistillProposer(BaseProposer):
+    """Proposer sử dụng mô hình DeepSeek R1 Distill Llama 70B - Model reasoning mạnh mẽ"""
+    
+    def __init__(self):
+        config = Config()
+        model_config = config.PROPOSER_MODELS[4]  # DeepSeek R1 Distill Llama 70B
         super().__init__(model_config)
 
 # Factory function để tạo proposer dựa trên cấu hình

@@ -9,6 +9,8 @@ from langchain_core.output_parsers import PydanticOutputParser
 from orchestrator.state import IncidentReport, Proposal, Evaluation
 from config import Config
 
+logger = logging.getLogger(__name__)
+
 # Evaluation Frameworks (optional imports - will be imported when needed)
 try:
     from deepeval import evaluate as deepeval_evaluate
@@ -32,8 +34,6 @@ try:
 except ImportError:
     PROMETHEUS_EVAL_AVAILABLE = False
     logger.warning("Prometheus-eval không được cài đặt. Một số tính năng đánh giá sẽ bị giới hạn.")
-
-logger = logging.getLogger(__name__)
 
 class JudgeAgent:
     """Agent đóng vai trò judge để đánh giá các đề xuất từ proposers"""

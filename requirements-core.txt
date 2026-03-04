@@ -13,21 +13,16 @@ ollama>=0.4.0
 # Error Handling & Retry
 tenacity>=8.2.0
 
-# Caching
+# Rate Limiting & Caching
+slowapi>=0.1.9
 redis>=5.0.0
 
-# Monitoring & Observability (nhẹ)
+# Monitoring & Observability (Core)
 opentelemetry-api>=1.20.0
 opentelemetry-sdk>=1.20.0
 opentelemetry-instrumentation-langchain>=0.41.0
 prometheus-client>=0.19.0
 
-# Vector / Search Backends (tùy chọn nhưng hay dùng trong AIOps)
-pymilvus>=2.3.0
-pinecone-client>=3.0.0
-elasticsearch>=8.11.0
-
 # Utilities
 pydantic>=2.5.0
-docker>=7.0.0
 python-dotenv>=1.0.0
