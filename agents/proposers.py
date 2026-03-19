@@ -1,11 +1,12 @@
 import asyncio
 import logging
 import os
+from datetime import datetime
 from typing import List, Dict, Any, Optional
 from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_community.chat_models import ChatOllama
+from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from orchestrator.state import IncidentReport, Proposal
@@ -139,7 +140,7 @@ Nguyên tắc phân tích:
             proposal = Proposal(
                 proposer_id=proposer_id,
                 report=report,
-                timestamp=str(asyncio.get_event_loop().time())
+                timestamp=datetime.now().isoformat()
             )
             
             logger.info(f"{proposer_id} hoàn thành phân tích với độ tin cậy: {report.confidence_score}")

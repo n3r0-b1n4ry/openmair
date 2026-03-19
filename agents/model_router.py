@@ -49,7 +49,7 @@ class ModelRouter:
     def __init__(self):
         """Khởi tạo Model Router với danh sách các model có sẵn"""
         self.models: Dict[str, ModelCapability] = {}
-        self.fallback_chain: List[str] = []
+        self.fallback_chain: List[List[str]] = []
         self._initialize_models()
         self._initialize_fallback_chain()
     
@@ -357,13 +357,13 @@ class ModelRouter:
             suitable_models.sort(key=lambda m: -m.accuracy_score)
         elif optimize_for == "balanced":
             # Tính điểm balanced (weighted score)
-            for model in suitable_models:
-                model.balanced_score = (
-                    (1.0 / model.cost_per_1k_tokens) * 0.3 +
-                    (1.0 / model.avg_latency_ms) * 0.3 +
-                    model.accuracy_score * 0.4
+            def _balanced_score(m: ModelCapability) -> float:
+                return (
+                    (1.0 / m.cost_per_1k_tokens) * 0.3 +
+                    (1.0 / m.avg_latency_ms) * 0.3 +
+                    m.accuracy_score * 0.4
                 )
-            suitable_models.sort(key=lambda m: -m.balanced_score)
+            suitable_models.sort(key=lambda m: -_balanced_score(m))
         
         selected_model = suitable_models[0]
         logger.info(

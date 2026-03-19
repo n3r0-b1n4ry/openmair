@@ -22,9 +22,10 @@ Dự án này xây dựng một hệ thống Tự động hóa Phản ứng Sự
 
 ### Proposer Models (Candidate LLMs)
 1. **Qwen 2.5 72B** - Model mã nguồn mở mạnh mẽ nhất hiện nay
-2. **Llama 3.1 70B** - Model mã nguồn mở phổ biến nhất
-3. **Mistral Large 2** - Model mã nguồn mở hiệu quả cao
+2. **Llama 3.3 70B** - Model mã nguồn mở phổ biến nhất (nâng cấp từ Llama 3.1)
+3. **QwQ-32B** - Model reasoning chain-of-thought (thay thế Mistral Large 2)
 4. **DeepSeek V3** - Model mã nguồn mở mới nhất
+5. **DeepSeek R1 Distill Llama 70B** - Model reasoning mạnh mẽ
 
 ### Judge Model (Oracle LLM)
 1. **GPT-4o** - Model mạnh mẽ nhất từ OpenAI

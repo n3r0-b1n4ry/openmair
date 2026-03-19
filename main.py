@@ -32,10 +32,6 @@ async def main():
     initial_state: AIOpsState = {
         "incident_logs": incident_logs,
         "messages": [],
-        "proposals": [],
-        "evaluations": [],
-        "final_report": None,
-        "executed_actions": []
     }
     
     try:

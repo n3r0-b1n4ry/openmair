@@ -1,4 +1,5 @@
-from typing import List, Optional
+import operator
+from typing import List, Optional, Annotated
 from pydantic import BaseModel, Field
 from langgraph.graph import MessagesState
 
@@ -27,8 +28,8 @@ class Evaluation(BaseModel):
 
 class AIOpsState(MessagesState):
     """Định nghĩa trạng thái toàn cục của hệ thống AIOps"""
-    incident_logs: str = Field(default="", description="Log sự cố đầu vào")
-    proposals: List[Proposal] = Field(default_factory=list, description="Danh sách các đề xuất từ các Proposers")
-    evaluations: List[Evaluation] = Field(default_factory=list, description="Danh sách các đánh giá từ các Judges")
-    final_report: Optional[IncidentReport] = Field(default=None, description="Báo cáo cuối cùng sau khi tổng hợp")
-    executed_actions: List[str] = Field(default_factory=list, description="Danh sách các hành động đã được thực thi")
+    incident_logs: str                                          # Log sự cố đầu vào
+    proposals: Annotated[list, operator.add]                    # Danh sách các đề xuất từ các Proposers
+    evaluations: Annotated[list, operator.add]                  # Danh sách các đánh giá từ các Judges
+    final_report: Optional[IncidentReport]                      # Báo cáo cuối cùng sau khi tổng hợp
+    executed_actions: Annotated[list, operator.add]              # Danh sách các hành động đã được thực thi

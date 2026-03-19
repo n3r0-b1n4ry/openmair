@@ -17,7 +17,6 @@ import os
 # LangChain embeddings
 try:
     from langchain_openai import OpenAIEmbeddings
-    from langchain_anthropic import AnthropicEmbeddings
     from langchain_google_genai import GoogleGenerativeAIEmbeddings
     EMBEDDINGS_AVAILABLE = True
 except ImportError:
@@ -41,7 +40,7 @@ except ImportError:
 
 # Pinecone imports
 try:
-    import pinecone
+    from pinecone import Pinecone
     PINECONE_AVAILABLE = True
 except ImportError:
     PINECONE_AVAILABLE = False
@@ -283,8 +282,8 @@ class PineconeVectorDB:
         self.api_key = api_key
         self.environment = environment
         
-        # Initialize Pinecone
-        pinecone.init(api_key=api_key, environment=environment)
+        # Initialize Pinecone (SDK v3+)
+        self.pc = Pinecone(api_key=api_key)
         
         logger.info(f"Đã kết nối tới Pinecone environment: {environment}")
     
@@ -303,15 +302,21 @@ class PineconeVectorDB:
         """
         try:
             # Kiểm tra index đã tồn tại chưa
-            if index_name in pinecone.list_indexes():
+            existing_indexes = [idx.name for idx in self.pc.list_indexes()]
+            if index_name in existing_indexes:
                 logger.info(f"Index {index_name} đã tồn tại")
                 return True
             
-            # Tạo index
-            pinecone.create_index(
+            # Tạo index (SDK v3+)
+            from pinecone import ServerlessSpec
+            self.pc.create_index(
                 name=index_name,
                 dimension=dimension,
-                metric=metric
+                metric=metric,
+                spec=ServerlessSpec(
+                    cloud="aws",
+                    region="us-east-1"
+                )
             )
             
             logger.info(f"Đã tạo index {index_name} thành công")
@@ -333,7 +338,7 @@ class PineconeVectorDB:
             int: Số lượng documents đã upsert
         """
         try:
-            index = pinecone.Index(index_name)
+            index = self.pc.Index(index_name)
             
             # Chuẩn bị vectors
             vectors = []
@@ -373,7 +378,7 @@ class PineconeVectorDB:
             List[SearchResult]: Danh sách kết quả tìm kiếm
         """
         try:
-            index = pinecone.Index(index_name)
+            index = self.pc.Index(index_name)
             
             # Query
             results = index.query(
@@ -412,7 +417,7 @@ class PineconeVectorDB:
             bool: True nếu thành công, False nếu thất bại
         """
         try:
-            pinecone.delete_index(index_name)
+            self.pc.delete_index(index_name)
             
             logger.info(f"Đã xóa index {index_name} thành công")
             return True
@@ -452,9 +457,9 @@ class EmbeddingGenerator:
                 openai_api_key=api_key or os.getenv("OPENAI_API_KEY")
             )
         elif provider == "anthropic":
-            self.embeddings = AnthropicEmbeddings(
-                model=model_name,
-                anthropic_api_key=api_key or os.getenv("ANTHROPIC_API_KEY")
+            raise ValueError(
+                "Anthropic không cung cấp embedding API. "
+                "Vui lòng sử dụng provider 'openai' hoặc 'google' cho embeddings."
             )
         elif provider == "google":
             self.embeddings = GoogleGenerativeAIEmbeddings(
