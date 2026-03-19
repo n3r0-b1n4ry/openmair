@@ -127,47 +127,6 @@ Các thông số cấu hình có thể được chỉnh sửa trong tệp `confi
 - Để điều chỉnh cấu hình Docker, chỉnh sửa `infrastructure/docker-compose.yml` hoặc `infrastructure/docker-compose.light.yml`
 - Để thay đổi quy tắc cho Cursor IDE, chỉnh sửa các tệp trong `.cursor/rules/`
 
-## Cập nhật 2026 - Refactor Notes
-
-### Thay đổi chính trong đợt refactor này:
-
-1. **Nâng cấp danh sách LLM Models (2026):**
-   - **Proposers:** Thay thế Llama 3.1 70B → Llama 3.3 70B (nhẹ hơn, bench tương đương 400B)
-   - **Proposers:** Thay thế Mistral Large 2 → QwQ-32B (reasoning chain-of-thought tốt hơn)
-   - **Proposers:** Thêm DeepSeek R1 Distill Llama 70B (model reasoning mạnh mẽ)
-   - **Judge:** Default Judge → Claude 3.7 Sonnet (hybrid reasoning tốt nhất)
-   - **Judge:** Fallback Judge → OpenAI o3-mini (cho logic code/log cực khó với reasoning_effort)
-
-2. **Cải thiện Orchestrator & Graph:**
-   - Cải thiện logic routing trong `orchestrator/router.py` với graceful degradation
-   - Thêm router `route_after_evaluation` để quyết định có chạy executor không
-   - Tất cả node functions đều kiểm tra đầu vào để tránh crash graph
-
-3. **Tối ưu Dependencies:**
-   - Tách `requirements.txt` thành 2 file:
-     - `requirements-core.txt`: Core dependencies để chạy hệ thống
-     - `requirements-eval.txt`: Evaluation frameworks (chỉ dùng khi benchmark offline)
-   - Giảm kích thước dependencies cho môi trường production
-
-4. **Docker Compose Light:**
-   - Thêm `infrastructure/docker-compose.light.yml` cho lab 1 GPU
-   - Chỉ chạy 1 container vLLM + Redis (tiết kiệm RAM/VRAM)
-   - Loại bỏ Milvus, MinIO, etcd, Nginx, Prometheus, Grafana
-
-### Model Router Updates:
-
-- Cập nhật `ModelCapability` với chi phí và performance mới cho các model 2026
-- Cập nhật `fallback_chain` để ưu tiên Claude 3.7 Sonnet và o3-mini cho tasks critical
-- Thêm support cho reasoning_effort parameter cho o3-mini
-
-### Migration Guide:
-
-Nếu bạn đang sử dụng version cũ:
-1. Cập nhật dependencies: `pip install -r requirements-core.txt`
-2. Cập nhật biến môi trường trong `config.py` (đã được cập nhật)
-3. Restart các services Docker: `docker-compose down && docker-compose up -d`
-4. (Tùy chọn) Chuyển sang profile light: `docker-compose -f infrastructure/docker-compose.light.yml up -d`
-
 ## Đóng góp
 
 Vui lòng tạo issue hoặc pull request để đóng góp cho dự án.
