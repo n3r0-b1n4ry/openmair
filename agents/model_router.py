@@ -1,8 +1,8 @@
 """
-Smart Model Router cho hệ thống AIOps Đa Tác Nhân
+Smart Model Router for the Multi-Agent AIOps System
 
-Module này cung cấp cơ chế routing thông minh để chọn model phù hợp nhất
-dựa trên complexity của task, cost, và performance requirements.
+This module provides an intelligent routing mechanism to select the most suitable model
+based on task complexity, cost, and performance requirements.
 """
 import logging
 from typing import Dict, List, Optional, Tuple
@@ -13,16 +13,16 @@ logger = logging.getLogger(__name__)
 
 
 class TaskComplexity(Enum):
-    """Độ phức tạp của task"""
-    LOW = "low"           # Task đơn giản, có thể xử lý nhanh
-    MEDIUM = "medium"     # Task trung bình
-    HIGH = "high"         # Task phức tạp, cần reasoning sâu
-    CRITICAL = "critical" # Task cực kỳ quan trọng, cần accuracy cao nhất
+    """Task complexity levels"""
+    LOW = "low"           # Simple tasks, can be processed quickly
+    MEDIUM = "medium"     # Medium complexity tasks
+    HIGH = "high"         # Complex tasks, require deep reasoning
+    CRITICAL = "critical" # Extremely important tasks, require highest accuracy
 
 
 @dataclass
 class ModelCapability:
-    """Khả năng của một model"""
+    """Capability profile for a model"""
     name: str
     model_id: str
     provider: str
@@ -37,70 +37,30 @@ class ModelCapability:
 
 class ModelRouter:
     """
-    Smart Model Router để chọn model phù hợp nhất cho từng task
+    Smart Model Router to select the most suitable model for each task
     
-    Router sẽ cân nhắc các yếu tố:
-    1. Complexity của task
+    The router considers the following factors:
+    1. Task complexity
     2. Cost optimization
     3. Performance requirements
-    4. Availability của model
+    4. Model availability
     """
     
     def __init__(self):
-        """Khởi tạo Model Router với danh sách các model có sẵn"""
+        """Initialize Model Router with available models"""
         self.models: Dict[str, ModelCapability] = {}
         self.fallback_chain: List[List[str]] = []
         self._initialize_models()
         self._initialize_fallback_chain()
     
     def _initialize_models(self):
-        """Khởi tạo danh sách các model có sẵn (2026)"""
-        # Models cho task LOW complexity (nhanh, rẻ)
-        self.models["gemini-1.5-flash"] = ModelCapability(
-            name="Gemini 1.5 Flash",
-            model_id="gemini-1.5-flash",
-            provider="google",
-            complexity_level=TaskComplexity.LOW,
-            cost_per_1k_tokens=0.000075,
-            avg_latency_ms=200,
-            accuracy_score=0.85,
-            max_tokens=8192,
-            supports_function_calling=True,
-            supports_streaming=True
-        )
-        
-        self.models["llama3.3"] = ModelCapability(
-            name="Llama 3.3",
-            model_id="llama3.3",
-            provider="ollama",
-            complexity_level=TaskComplexity.LOW,
-            cost_per_1k_tokens=0.0001,  # Chi phí chạy local
-            avg_latency_ms=300,
-            accuracy_score=0.87,
-            max_tokens=8192,
-            supports_function_calling=True,
-            supports_streaming=True
-        )
-        
-        # Models cho task MEDIUM complexity
-        self.models["deepseek-v3"] = ModelCapability(
-            name="DeepSeek V3",
-            model_id="deepseek-ai/DeepSeek-V3",
-            provider="openai",
-            complexity_level=TaskComplexity.MEDIUM,
-            cost_per_1k_tokens=0.00014,
-            avg_latency_ms=500,
-            accuracy_score=0.90,
-            max_tokens=8192,
-            supports_function_calling=True,
-            supports_streaming=True
-        )
-        
+        """Initialize the list of available models"""
+        # Models for LOW complexity tasks (fast, cheap)
         self.models["gpt-4o-mini"] = ModelCapability(
             name="GPT-4o Mini",
             model_id="gpt-4o-mini",
             provider="openai",
-            complexity_level=TaskComplexity.MEDIUM,
+            complexity_level=TaskComplexity.LOW,
             cost_per_1k_tokens=0.00015,
             avg_latency_ms=400,
             accuracy_score=0.92,
@@ -109,65 +69,65 @@ class ModelRouter:
             supports_streaming=True
         )
         
-        # Models cho task HIGH complexity (2026 updates)
-        self.models["qwen-2.5-72b"] = ModelCapability(
-            name="Qwen 2.5 72B",
-            model_id="Qwen/Qwen2.5-72B-Instruct",
+        # Models for MEDIUM complexity tasks
+        self.models["qwen-3.5-27b"] = ModelCapability(
+            name="Qwen 3.5 27B",
+            model_id="Qwen/Qwen3.5-27B-Instruct",
             provider="openai",
-            complexity_level=TaskComplexity.HIGH,
+            complexity_level=TaskComplexity.MEDIUM,
             cost_per_1k_tokens=0.0002,
-            avg_latency_ms=800,
+            avg_latency_ms=600,
             accuracy_score=0.94,
-            max_tokens=8192,
-            supports_function_calling=True,
-            supports_streaming=True
-        )
-        
-        self.models["llama-3.3-70b"] = ModelCapability(
-            name="Llama 3.3 70B Instruct",  # Cập nhật từ Llama 3.1
-            model_id="meta-llama/Llama-3.3-70B-Instruct",
-            provider="openai",
-            complexity_level=TaskComplexity.HIGH,
-            cost_per_1k_tokens=0.00025,
-            avg_latency_ms=850,  # Nhanh hơn Llama 3.1
-            accuracy_score=0.94,  # Accuracy cao hơn
             max_tokens=128000,
             supports_function_calling=True,
             supports_streaming=True
         )
         
-        self.models["qwq-32b"] = ModelCapability(
-            name="QwQ-32B",  # Model reasoning mới
-            model_id="Qwen/QwQ-32B-Preview",
+        self.models["llama-4-17b"] = ModelCapability(
+            name="Llama 4 17B Instruct",
+            model_id="meta-llama/Meta-Llama-4-17B-Instruct",
             provider="openai",
-            complexity_level=TaskComplexity.HIGH,
-            cost_per_1k_tokens=0.00018,
-            avg_latency_ms=700,
+            complexity_level=TaskComplexity.MEDIUM,
+            cost_per_1k_tokens=0.00015,
+            avg_latency_ms=500,
             accuracy_score=0.93,
-            max_tokens=32768,
+            max_tokens=128000,
             supports_function_calling=True,
             supports_streaming=True
         )
         
-        # Models cho task CRITICAL complexity (2026 updates)
-        self.models["deepseek-r1"] = ModelCapability(
-            name="DeepSeek R1",
-            model_id="deepseek-reasoner",
-            provider="deepseek",
-            complexity_level=TaskComplexity.CRITICAL,
-            cost_per_1k_tokens=0.00055,
-            avg_latency_ms=1500,
-            accuracy_score=0.97,
-            max_tokens=8192,
+        # Models for HIGH complexity tasks
+        self.models["devstral-small-2-24b"] = ModelCapability(
+            name="Devstral Small 2 24B",
+            model_id="mistralai/Devstral-Small-2-24B-Instruct",
+            provider="openai",
+            complexity_level=TaskComplexity.HIGH,
+            cost_per_1k_tokens=0.00018,
+            avg_latency_ms=700,
+            accuracy_score=0.94,
+            max_tokens=128000,
+            supports_function_calling=True,
+            supports_streaming=True
+        )
+        
+        self.models["gemma-4-27b"] = ModelCapability(
+            name="Gemma 4 27B",
+            model_id="google/Gemma-4-27B-Instruct",
+            provider="openai",
+            complexity_level=TaskComplexity.HIGH,
+            cost_per_1k_tokens=0.0002,
+            avg_latency_ms=800,
+            accuracy_score=0.93,
+            max_tokens=128000,
             supports_function_calling=True,
             supports_streaming=True
         )
         
         self.models["deepseek-r1-distill-llama-70b"] = ModelCapability(
-            name="DeepSeek R1 Distill Llama 70B",  # Model reasoning mạnh mẽ
+            name="DeepSeek R1 Distill Llama 70B",
             model_id="deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
             provider="openai",
-            complexity_level=TaskComplexity.CRITICAL,
+            complexity_level=TaskComplexity.HIGH,
             cost_per_1k_tokens=0.0003,
             avg_latency_ms=1200,
             accuracy_score=0.96,
@@ -176,6 +136,7 @@ class ModelRouter:
             supports_streaming=True
         )
         
+        # Models for CRITICAL complexity tasks (Judge models)
         self.models["gpt-4o"] = ModelCapability(
             name="GPT-4o",
             model_id="gpt-4o",
@@ -189,73 +150,68 @@ class ModelRouter:
             supports_streaming=True
         )
         
-        self.models["claude-3.7-sonnet"] = ModelCapability(
-            name="Claude 3.7 Sonnet",  # Cập nhật từ Claude 3.5 - hybrid reasoning tốt nhất
-            model_id="claude-3-7-sonnet",
+        self.models["claude-opus-4.7"] = ModelCapability(
+            name="Claude Opus 4.7",
+            model_id="claude-opus-4.7",
             provider="anthropic",
             complexity_level=TaskComplexity.CRITICAL,
             cost_per_1k_tokens=0.0035,
             avg_latency_ms=1100,
-            accuracy_score=0.98,
+            accuracy_score=0.99,
             max_tokens=200000,
             supports_function_calling=True,
             supports_streaming=True
         )
         
-        self.models["o3-mini"] = ModelCapability(
-            name="OpenAI o3-mini",  # Model reasoning mới cho logic code/log cực khó
-            model_id="o3-mini",
-            provider="openai",
+        self.models["gemini-3.1-pro"] = ModelCapability(
+            name="Gemini 3.1 Pro",
+            model_id="gemini-3.1-pro",
+            provider="google",
             complexity_level=TaskComplexity.CRITICAL,
-            cost_per_1k_tokens=0.0011,  # Thinking tokens được tính riêng
-            avg_latency_ms=2000,  # Chậm hơn do reasoning
-            accuracy_score=0.99,
-            max_tokens=100000,
+            cost_per_1k_tokens=0.004,
+            avg_latency_ms=1000,
+            accuracy_score=0.98,
+            max_tokens=1000000,
             supports_function_calling=True,
-            supports_streaming=False  # o3-mini không hỗ trợ streaming
+            supports_streaming=True
         )
         
-        logger.info(f"Đã khởi tạo {len(self.models)} models cho routing (2026)")
+        logger.info(f"Initialized {len(self.models)} models for routing")
     
     def _initialize_fallback_chain(self):
-        """Khởi tạo chuỗi fallback khi model fail (2026)"""
-        # Fallback chain cho mỗi complexity level
+        """Initialize fallback chains when a model fails"""
+        # Fallback chain for each complexity level
         self.fallback_chain = [
             # CRITICAL -> HIGH -> MEDIUM -> LOW
             [
-                "claude-3.7-sonnet",  # Default Judge - hybrid reasoning tốt nhất
-                "o3-mini",  # Fallback cho logic code/log cực khó
-                "deepseek-r1-distill-llama-70b",  # Reasoning mạnh mẽ
-                "deepseek-r1",
-                "gpt-4o",
-                "qwen-2.5-72b",
-                "llama-3.3-70b",
-                "qwq-32b",
-                "deepseek-v3",
-                "gpt-4o-mini",
-                "gemini-1.5-flash"
+                "claude-opus-4.7",           # Default Judge - Best reasoning
+                "gpt-4o",                    # Fallback Judge
+                "gemini-3.1-pro",            # Alternative Judge
+                "deepseek-r1-distill-llama-70b",
+                "devstral-small-2-24b",
+                "gemma-4-27b",
+                "qwen-3.5-27b",
+                "llama-4-17b",
+                "gpt-4o-mini"
             ],
             # HIGH -> MEDIUM -> LOW
             [
-                "qwen-2.5-72b",
-                "llama-3.3-70b",  # Cập nhật từ Llama 3.1
-                "qwq-32b",  # Thêm model reasoning mới
-                "deepseek-v3",
-                "gpt-4o-mini",
-                "gemini-1.5-flash",
-                "llama3.3"
+                "deepseek-r1-distill-llama-70b",
+                "devstral-small-2-24b",
+                "gemma-4-27b",
+                "qwen-3.5-27b",
+                "llama-4-17b",
+                "gpt-4o-mini"
             ],
             # MEDIUM -> LOW
             [
-                "deepseek-v3",
-                "gpt-4o-mini",
-                "gemini-1.5-flash",
-                "llama3.3"
+                "qwen-3.5-27b",
+                "llama-4-17b",
+                "gpt-4o-mini"
             ],
             # LOW
             [
-                "gemini-1.5-flash",
-                "llama3.3"
+                "gpt-4o-mini"
             ]
         ]
     
@@ -267,21 +223,21 @@ class ModelRouter:
         requires_accuracy: bool = False
     ) -> TaskComplexity:
         """
-        Ước lượng độ phức tạp của task dựa trên input
+        Estimate task complexity based on input
         
         Args:
-            input_text (str): Input text cần xử lý
-            context_length (int): Độ dài của context
-            requires_reasoning (bool): Task có cần reasoning sâu không
-            requires_accuracy (bool): Task có cần accuracy cao không
+            input_text (str): Input text to process
+            context_length (int): Context length
+            requires_reasoning (bool): Whether the task requires deep reasoning
+            requires_accuracy (bool): Whether the task requires high accuracy
             
         Returns:
-            TaskComplexity: Độ phức tạp của task
+            TaskComplexity: Task complexity level
         """
-        # Tính điểm số dựa trên các yếu tố
+        # Calculate score based on factors
         score = 0
         
-        # Độ dài input
+        # Input length
         if len(input_text) > 10000:
             score += 3
         elif len(input_text) > 5000:
@@ -289,7 +245,7 @@ class ModelRouter:
         elif len(input_text) > 1000:
             score += 1
         
-        # Độ dài context
+        # Context length
         if context_length > 50000:
             score += 3
         elif context_length > 10000:
@@ -297,15 +253,15 @@ class ModelRouter:
         elif context_length > 1000:
             score += 1
         
-        # Yêu cầu reasoning
+        # Reasoning requirement
         if requires_reasoning:
             score += 3
         
-        # Yêu cầu accuracy
+        # Accuracy requirement
         if requires_accuracy:
             score += 2
         
-        # Xác định complexity level
+        # Determine complexity level
         if score >= 8:
             return TaskComplexity.CRITICAL
         elif score >= 5:
@@ -322,19 +278,19 @@ class ModelRouter:
         exclude_models: Optional[List[str]] = None
     ) -> ModelCapability:
         """
-        Chọn model phù hợp nhất cho task
+        Select the most suitable model for a task
         
         Args:
-            complexity (TaskComplexity): Độ phức tạp của task
-            optimize_for (str): Tiêu chí tối ưu hóa
-            exclude_models (Optional[List[str]]): Danh sách model cần loại trừ
+            complexity (TaskComplexity): Task complexity
+            optimize_for (str): Optimization criterion
+            exclude_models (Optional[List[str]]): List of models to exclude
             
         Returns:
-            ModelCapability: Model được chọn
+            ModelCapability: Selected model
         """
         exclude_models = exclude_models or []
         
-        # Lọc các model phù hợp với complexity level
+        # Filter models suitable for the complexity level
         suitable_models = [
             model for model_id, model in self.models.items()
             if model.complexity_level == complexity
@@ -343,12 +299,12 @@ class ModelRouter:
         
         if not suitable_models:
             logger.warning(
-                f"Không có model phù hợp cho complexity {complexity.value}. "
-                f"Sử dụng model fallback"
+                f"No suitable model for complexity {complexity.value}. "
+                f"Using fallback model"
             )
             return self._get_fallback_model(complexity, exclude_models)
         
-        # Sắp xếp models dựa trên tiêu chí tối ưu hóa
+        # Sort models based on optimization criterion
         if optimize_for == "cost":
             suitable_models.sort(key=lambda m: m.cost_per_1k_tokens)
         elif optimize_for == "speed":
@@ -356,7 +312,7 @@ class ModelRouter:
         elif optimize_for == "accuracy":
             suitable_models.sort(key=lambda m: -m.accuracy_score)
         elif optimize_for == "balanced":
-            # Tính điểm balanced (weighted score)
+            # Calculate balanced (weighted) score
             def _balanced_score(m: ModelCapability) -> float:
                 return (
                     (1.0 / m.cost_per_1k_tokens) * 0.3 +
@@ -367,7 +323,7 @@ class ModelRouter:
         
         selected_model = suitable_models[0]
         logger.info(
-            f"Đã chọn model: {selected_model.name} cho complexity {complexity.value} "
+            f"Selected model: {selected_model.name} for complexity {complexity.value} "
             f"(optimize_for: {optimize_for})"
         )
         
@@ -379,29 +335,29 @@ class ModelRouter:
         exclude_models: List[str]
     ) -> ModelCapability:
         """
-        Lấy model fallback khi không có model phù hợp
+        Get a fallback model when no suitable model is found
         
         Args:
-            complexity (TaskComplexity): Độ phức tạp của task
-            exclude_models (List[str]): Danh sách model cần loại trừ
+            complexity (TaskComplexity): Task complexity
+            exclude_models (List[str]): List of models to exclude
             
         Returns:
-            ModelCapability: Model fallback
+            ModelCapability: Fallback model
         """
-        # Tìm fallback chain phù hợp
+        # Find suitable fallback chain
         for chain in self.fallback_chain:
             for model_id in chain:
                 if model_id in self.models and model_id not in exclude_models:
                     model = self.models[model_id]
                     logger.warning(
-                        f"Sử dụng model fallback: {model.name} cho complexity {complexity.value}"
+                        f"Using fallback model: {model.name} for complexity {complexity.value}"
                     )
                     return model
         
-        # Nếu không có model nào, sử dụng model mặc định
+        # If no model is available, use default model
         default_model = self.models["gpt-4o-mini"]
         logger.error(
-            f"Không có model nào khả dụng. Sử dụng model mặc định: {default_model.name}"
+            f"No model available. Using default model: {default_model.name}"
         )
         return default_model
     
@@ -415,20 +371,20 @@ class ModelRouter:
         exclude_models: Optional[List[str]] = None
     ) -> Tuple[ModelCapability, TaskComplexity]:
         """
-        Hàm chính để routing model
+        Main function for model routing
         
         Args:
-            input_text (str): Input text cần xử lý
-            context_length (int): Độ dài của context
-            requires_reasoning (bool): Task có cần reasoning sâu không
-            requires_accuracy (bool): Task có cần accuracy cao không
-            optimize_for (str): Tiêu chí tối ưu hóa
-            exclude_models (Optional[List[str]]): Danh sách model cần loại trừ
+            input_text (str): Input text to process
+            context_length (int): Context length
+            requires_reasoning (bool): Whether the task requires deep reasoning
+            requires_accuracy (bool): Whether the task requires high accuracy
+            optimize_for (str): Optimization criterion
+            exclude_models (Optional[List[str]]): List of models to exclude
             
         Returns:
-            Tuple[ModelCapability, TaskComplexity]: Model được chọn và độ phức tạp
+            Tuple[ModelCapability, TaskComplexity]: Selected model and complexity level
         """
-        # Ước lượng complexity
+        # Estimate complexity
         complexity = self.estimate_task_complexity(
             input_text=input_text,
             context_length=context_length,
@@ -436,9 +392,9 @@ class ModelRouter:
             requires_accuracy=requires_accuracy
         )
         
-        logger.info(f"Ước lượng task complexity: {complexity.value}")
+        logger.info(f"Estimated task complexity: {complexity.value}")
         
-        # Chọn model
+        # Select model
         model = self.select_model(
             complexity=complexity,
             optimize_for=optimize_for,
@@ -449,13 +405,13 @@ class ModelRouter:
     
     def get_fallback_chain(self, model_id: str) -> List[str]:
         """
-        Lấy chuỗi fallback cho một model cụ thể
+        Get the fallback chain for a specific model
         
         Args:
-            model_id (str): ID của model cần fallback
+            model_id (str): Model ID to get fallback for
             
         Returns:
-            List[str]: Chuỗi fallback
+            List[str]: Fallback chain
         """
         for chain in self.fallback_chain:
             if model_id in chain:
@@ -465,7 +421,7 @@ class ModelRouter:
         return []
 
 
-# Tạo instance toàn cục
+# Create global instance
 model_router = ModelRouter()
 
 

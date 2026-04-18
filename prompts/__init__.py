@@ -1,7 +1,7 @@
 """
-Prompts package cho hệ thống AIOps Đa Tác Nhân
+Prompts package for the Multi-Agent AIOps System
 
-Bao gồm các mẫu prompt chuyên dụng để chống bias.
+Includes specialized prompt templates designed to counter bias.
 """
 
 from prompts.templates import (

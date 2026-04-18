@@ -1,5 +1,5 @@
 """
-Cấu hình hệ thống AIOps Đa Tác Nhân
+Multi-Agent AIOps System Configuration
 """
 import os
 import logging
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ModelConfig:
-    """Cấu hình cho một model LLM"""
+    """Configuration for an LLM model"""
     name: str
     model_id: str
     api_base: Optional[str] = None
@@ -20,87 +20,78 @@ class ModelConfig:
     provider: str = "openai"  # openai, anthropic, google, deepseek, ollama
 
 class Config:
-    """Lớp cấu hình cho hệ thống"""
+    """System configuration class"""
     
-    # Cấu hình OpenAI API cho Judge Agent
+    # OpenAI API configuration for Judge Agent
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     
-    # Cấu hình Anthropic API cho Claude (tùy chọn)
+    # Anthropic API configuration for Claude (optional)
     ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
     
-    # Cấu hình Google API cho Gemini (tùy chọn)
+    # Google API configuration for Gemini (optional)
     GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "")
     
-    # Cấu hình LangSmith cho tracing (tùy chọn)
+    # LangSmith configuration for tracing (optional)
     LANGCHAIN_TRACING_V2: bool = os.getenv("LANGCHAIN_TRACING_V2", "false").lower() == "true"
     LANGCHAIN_API_KEY: str = os.getenv("LANGCHAIN_API_KEY", "")
     LANGCHAIN_PROJECT: str = os.getenv("LANGCHAIN_PROJECT", "aiops-moa-system")
     
-    # Cấu hình vLLM endpoints cho các model mã nguồn mở (2026)
-    VLLM_QWEN_URL: str = os.getenv("VLLM_QWEN_URL", "http://localhost:8000")  # Qwen 2.5 72B
-    VLLM_LLAMA33_URL: str = os.getenv("VLLM_LLAMA33_URL", "http://localhost:8001")  # Llama 3.3 70B
-    VLLM_QWQ_URL: str = os.getenv("VLLM_QWQ_URL", "http://localhost:8002")  # QwQ-32B
-    VLLM_DEEPSEEK_URL: str = os.getenv("VLLM_DEEPSEEK_URL", "http://localhost:8003")  # DeepSeek V3
+    # vLLM endpoints for open-source models
+    VLLM_QWEN35_URL: str = os.getenv("VLLM_QWEN35_URL", "http://localhost:8000")      # Qwen 3.5 27B
+    VLLM_LLAMA4_URL: str = os.getenv("VLLM_LLAMA4_URL", "http://localhost:8001")       # Llama 4 17B
+    VLLM_DEVSTRAL_URL: str = os.getenv("VLLM_DEVSTRAL_URL", "http://localhost:8002")   # Devstral Small 2 24B
+    VLLM_GEMMA4_URL: str = os.getenv("VLLM_GEMMA4_URL", "http://localhost:8003")       # Gemma 4 27B
     VLLM_R1_DISTILL_URL: str = os.getenv("VLLM_R1_DISTILL_URL", "http://localhost:8004")  # DeepSeek R1 Distill
     
-    # Cấu hình logging
+    # Logging configuration
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     
-    # Cấu hình Judge Model (Oracle) - Sử dụng model cao cấp nhất (2026)
-    JUDGE_MODEL: str = os.getenv("JUDGE_MODEL", "claude-3-7-sonnet")  # Default: Claude 3.7 Sonnet
-    JUDGE_ALTERNATIVE: str = os.getenv("JUDGE_ALTERNATIVE", "o3-mini")  # Fallback: OpenAI o3-mini
+    # Judge Model (Oracle) - Uses premium models
+    JUDGE_MODEL: str = os.getenv("JUDGE_MODEL", "claude-opus-4.7")  # Default: Claude Opus 4.7
+    JUDGE_ALTERNATIVE: str = os.getenv("JUDGE_ALTERNATIVE", "gpt-4o")  # Fallback: GPT-4o
     
-    # Cấu hình DeepSeek R1 cho reasoning phức tạp
-    DEEPSEEK_R1_MODEL: str = os.getenv("DEEPSEEK_R1_MODEL", "deepseek-reasoner")
-    DEEPSEEK_API_KEY: str = os.getenv("DEEPSEEK_API_KEY", "")
+    # Gemini 3.1 Pro for Judge (optional)
+    GEMINI_PRO_MODEL: str = os.getenv("GEMINI_PRO_MODEL", "gemini-3.1-pro")
     
-    # Cấu hình OpenAI o3-mini cho reasoning cực khó (2026)
-    OPENAI_O3_MINI_MODEL: str = os.getenv("OPENAI_O3_MINI_MODEL", "o3-mini")
-    O3_REASONING_EFFORT: str = os.getenv("O3_REASONING_EFFORT", "medium")  # low, medium, high
-    
-    # Cấu hình Llama 3.3 qua Ollama cho xử lý nhanh
+    # Ollama configuration for local processing
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-    LLAMA33_MODEL: str = os.getenv("LLAMA33_MODEL", "llama3.3")
     
-    # Cấu hình Gemini 1.5 Flash cho phân tích log nhanh
-    GEMINI_FLASH_MODEL: str = os.getenv("GEMINI_FLASH_MODEL", "gemini-1.5-flash")
-    
-    # Cấu hình các Proposer Models (Candidate LLMs) - Sử dụng các model mã nguồn mở mới nhất (2026)
+    # Proposer Models (Candidate LLMs) - State-of-the-art open-source models
     PROPOSER_MODELS: List[ModelConfig] = [
         ModelConfig(
-            name="Qwen 2.5 72B",
-            model_id="Qwen/Qwen2.5-72B-Instruct",
+            name="Qwen 3.5 27B",
+            model_id="Qwen/Qwen3.5-27B-Instruct",
             api_base="http://localhost:8000/v1",
             temperature=0.7,
             max_tokens=4096,
             provider="openai"
         ),
         ModelConfig(
-            name="Llama 3.3 70B Instruct",  # Cập nhật từ Llama 3.1 - nhẹ hơn, bench tương đương 400B
-            model_id="meta-llama/Llama-3.3-70B-Instruct",
+            name="Llama 4 17B Instruct",
+            model_id="meta-llama/Meta-Llama-4-17B-Instruct",
             api_base="http://localhost:8001/v1",
             temperature=0.7,
             max_tokens=4096,
             provider="openai"
         ),
         ModelConfig(
-            name="QwQ-32B",  # Thay thế Mistral Large 2 - reasoning chain-of-thought tốt hơn
-            model_id="Qwen/QwQ-32B-Preview",
+            name="Devstral Small 2 24B",
+            model_id="mistralai/Devstral-Small-2-24B-Instruct",
             api_base="http://localhost:8002/v1",
             temperature=0.6,
             max_tokens=8192,
             provider="openai"
         ),
         ModelConfig(
-            name="DeepSeek V3",
-            model_id="deepseek-ai/DeepSeek-V3",
+            name="Gemma 4 27B",
+            model_id="google/Gemma-4-27B-Instruct",
             api_base="http://localhost:8003/v1",
             temperature=0.7,
             max_tokens=4096,
             provider="openai"
         ),
         ModelConfig(
-            name="DeepSeek R1 Distill Llama 70B",  # Model reasoning mạnh mẽ
+            name="DeepSeek R1 Distill Llama 70B",
             model_id="deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
             api_base="http://localhost:8004/v1",
             temperature=0.6,
@@ -109,44 +100,24 @@ class Config:
         ),
     ]
     
-    # Models phụ trợ (không phải proposer chính)
-    AUXILIARY_MODELS: List[ModelConfig] = [
-        ModelConfig(
-            name="Llama 3.3",  # Qua Ollama cho xử lý nhanh
-            model_id="llama3.3",
-            api_base="http://localhost:11434/api",
-            temperature=0.7,
-            max_tokens=4096,
-            provider="ollama"
-        ),
-        ModelConfig(
-            name="Gemini 1.5 Flash",
-            model_id="gemini-1.5-flash",
-            api_base=None,
-            temperature=0.7,
-            max_tokens=4096,
-            provider="google"
-        ),
-    ]
-    
-    # Cấu hình Executor Model (có thể sử dụng model nhẹ hơn)
+    # Executor Model (lightweight model for execution)
     EXECUTOR_MODEL: str = os.getenv("EXECUTOR_MODEL", "gpt-4o-mini")
     
-    # Cấu hình tối ưu hóa
+    # Optimization settings
     ENABLE_CACHING: bool = os.getenv("ENABLE_CACHING", "true").lower() == "true"
     ENABLE_STREAMING: bool = os.getenv("ENABLE_STREAMING", "true").lower() == "true"
     MAX_RETRIES: int = int(os.getenv("MAX_RETRIES", "3"))
     RETRY_DELAY: float = float(os.getenv("RETRY_DELAY", "1.0"))
     
-    # Cấu hình Redis cho caching và rate limiting
+    # Redis configuration for caching and rate limiting
     REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
     REDIS_PORT: int = int(os.getenv("REDIS_PORT", "6379"))
     REDIS_DB: int = int(os.getenv("REDIS_DB", "0"))
     REDIS_PASSWORD: Optional[str] = os.getenv("REDIS_PASSWORD", None)
-    REDIS_CACHE_TTL: int = int(os.getenv("REDIS_CACHE_TTL", "3600"))  # 1 giờ
+    REDIS_CACHE_TTL: int = int(os.getenv("REDIS_CACHE_TTL", "3600"))  # 1 hour
     
-    # Cấu hình Vector Database (Milvus hoặc Pinecone)
-    VECTOR_DB_TYPE: str = os.getenv("VECTOR_DB_TYPE", "milvus")  # milvus hoặc pinecone
+    # Vector Database configuration (Milvus or Pinecone)
+    VECTOR_DB_TYPE: str = os.getenv("VECTOR_DB_TYPE", "milvus")  # milvus or pinecone
     
     # Milvus configuration
     MILVUS_HOST: str = os.getenv("MILVUS_HOST", "localhost")
@@ -158,14 +129,14 @@ class Config:
     PINECONE_ENVIRONMENT: str = os.getenv("PINECONE_ENVIRONMENT", "us-west1-gcp")
     PINECONE_INDEX_NAME: str = os.getenv("PINECONE_INDEX_NAME", "aiops-logs")
     
-    # Cấu hình Elasticsearch cho ELK Stack
+    # Elasticsearch configuration for ELK Stack
     ELASTICSEARCH_HOST: str = os.getenv("ELASTICSEARCH_HOST", "localhost")
     ELASTICSEARCH_PORT: int = int(os.getenv("ELASTICSEARCH_PORT", "9200"))
     ELASTICSEARCH_USERNAME: Optional[str] = os.getenv("ELASTICSEARCH_USERNAME", None)
     ELASTICSEARCH_PASSWORD: Optional[str] = os.getenv("ELASTICSEARCH_PASSWORD", None)
     ELASTICSEARCH_INDEX_PREFIX: str = os.getenv("ELASTICSEARCH_INDEX_PREFIX", "aiops-logs")
     
-    # Cấu hình OpenTelemetry cho monitoring
+    # OpenTelemetry configuration for monitoring
     OTEL_ENABLED: bool = os.getenv("OTEL_ENABLED", "true").lower() == "true"
     OTEL_SERVICE_NAME: str = os.getenv("OTEL_SERVICE_NAME", "aiops-moa-system")
     OTEL_EXPORTER_OTLP_ENDPOINT: str = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317")
@@ -174,27 +145,27 @@ class Config:
     @classmethod
     def validate(cls) -> bool:
         """
-        Kiểm tra xem cấu hình có hợp lệ không
+        Check if the configuration is valid
         
         Returns:
-            bool: True nếu cấu hình hợp lệ, False nếu không
+            bool: True if configuration is valid, False otherwise
         """
         if not cls.OPENAI_API_KEY and not cls.ANTHROPIC_API_KEY and not cls.GOOGLE_API_KEY:
-            logger.warning("Không có API key nào được cấu hình (OPENAI_API_KEY, ANTHROPIC_API_KEY, hoặc GOOGLE_API_KEY)!")
+            logger.warning("No API key configured (OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_API_KEY)!")
             return False
         return True
     
     @classmethod
     def get_judge_model_config(cls) -> Dict:
         """
-        Lấy cấu hình cho Judge model
+        Get configuration for the Judge model
         
         Returns:
-            Dict: Cấu hình cho Judge model
+            Dict: Judge model configuration
         """
         return {
             "model": cls.JUDGE_MODEL,
-            "temperature": 0.0,  # Judge cần deterministic
+            "temperature": 0.0,  # Judge needs to be deterministic
             "max_tokens": 8192,
             "timeout": 120
         }
@@ -202,10 +173,10 @@ class Config:
     @classmethod
     def get_proposer_configs(cls) -> List[Dict]:
         """
-        Lấy cấu hình cho tất cả Proposer models
+        Get configuration for all Proposer models
         
         Returns:
-            List[Dict]: Danh sách cấu hình cho các Proposer models
+            List[Dict]: List of Proposer model configurations
         """
         return [
             {
@@ -221,10 +192,10 @@ class Config:
     @classmethod
     def get_executor_model_config(cls) -> Dict:
         """
-        Lấy cấu hình cho Executor model
+        Get configuration for the Executor model
         
         Returns:
-            Dict: Cấu hình cho Executor model
+            Dict: Executor model configuration
         """
         return {
             "model": cls.EXECUTOR_MODEL,
@@ -236,10 +207,10 @@ class Config:
     @classmethod
     def get_redis_config(cls) -> Dict:
         """
-        Lấy cấu hình Redis
+        Get Redis configuration
         
         Returns:
-            Dict: Cấu hình Redis
+            Dict: Redis configuration
         """
         return {
             "host": cls.REDIS_HOST,
@@ -252,10 +223,10 @@ class Config:
     @classmethod
     def get_vector_db_config(cls) -> Dict:
         """
-        Lấy cấu hình Vector Database
+        Get Vector Database configuration
         
         Returns:
-            Dict: Cấu hình Vector Database
+            Dict: Vector Database configuration
         """
         if cls.VECTOR_DB_TYPE == "milvus":
             return {
@@ -277,10 +248,10 @@ class Config:
     @classmethod
     def get_elasticsearch_config(cls) -> Dict:
         """
-        Lấy cấu hình Elasticsearch
+        Get Elasticsearch configuration
         
         Returns:
-            Dict: Cấu hình Elasticsearch
+            Dict: Elasticsearch configuration
         """
         return {
             "hosts": [{"host": cls.ELASTICSEARCH_HOST, "port": cls.ELASTICSEARCH_PORT}],
@@ -291,10 +262,10 @@ class Config:
     @classmethod
     def get_otel_config(cls) -> Dict:
         """
-        Lấy cấu hình OpenTelemetry
+        Get OpenTelemetry configuration
         
         Returns:
-            Dict: Cấu hình OpenTelemetry
+            Dict: OpenTelemetry configuration
         """
         return {
             "enabled": cls.OTEL_ENABLED,
@@ -303,5 +274,5 @@ class Config:
             "exporter_prometheus_port": cls.OTEL_EXPORTER_PROMETHEUS_PORT
         }
 
-# Tạo instance cấu hình toàn cục
+# Create global configuration instance
 config = Config()

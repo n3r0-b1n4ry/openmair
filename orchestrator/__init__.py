@@ -1,8 +1,8 @@
 """
-Orchestrator package cho hệ thống AIOps Đa Tác Nhân
+Orchestrator package for the Multi-Agent AIOps System
 
-Bao gồm:
-- state: Định nghĩa trạng thái toàn cục (AIOpsState)
-- router: Bộ định tuyến cho workflow
-- graph: LangGraph workflow chính
+Includes:
+- state: Global state definition (AIOpsState)
+- router: Workflow router
+- graph: Main LangGraph workflow
 """

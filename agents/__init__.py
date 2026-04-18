@@ -1,8 +1,8 @@
 """
-Agents package cho hệ thống AIOps Đa Tác Nhân
+Agents package for the Multi-Agent AIOps System
 
-Bao gồm:
-- proposers: Các Proposer agent (Candidate LLMs)
+Includes:
+- proposers: Proposer agents (Candidate LLMs)
 - judge: Judge agent (Oracle LLM)
 - executor: Executor agent
 - model_router: Smart Model Router

@@ -1,8 +1,8 @@
 """
-LangGraph Workflow cho hệ thống AIOps Đa Tác Nhân
+LangGraph Workflow for the Multi-Agent AIOps System
 
-Module này định nghĩa workflow chính với conditional routing
-để điều hướng luồng xử lý sự cố một cách linh hoạt.
+This module defines the main workflow with conditional routing
+to flexibly direct the incident processing flow.
 """
 import asyncio
 import logging
@@ -18,7 +18,7 @@ from agents.executor import ExecutorAgent
 
 logger = logging.getLogger(__name__)
 
-# Khởi tạo các agent
+# Initialize agents
 proposers = create_proposers()
 judge_agent = JudgeAgent()
 executor_agent = ExecutorAgent()
@@ -26,20 +26,20 @@ executor_agent = ExecutorAgent()
 
 async def proposers_node(state: AIOpsState) -> dict:
     """
-    Node tạo các đề xuất từ danh sách proposers.
+    Node that generates proposals from the list of proposers.
 
-    Chạy song song tất cả proposer với cùng incident_logs và
-    thu về danh sách Proposal để gắn vào state.proposals.
+    Runs all proposers in parallel with the same incident_logs and
+    collects Proposal objects to attach to state.proposals.
 
-    Graceful degradation: Nếu incident_logs trống, trả về list rỗng.
+    Graceful degradation: If incident_logs is empty, returns an empty list.
     """
     incident_logs = state.get("incident_logs", "")
     if not incident_logs:
-        logger.warning("Không có incident_logs, bỏ qua bước proposers.")
+        logger.warning("No incident_logs provided, skipping proposers step.")
         return {"proposals": []}
 
     try:
-        logger.info(f"Bắt đầu tạo đề xuất từ {len(proposers)} proposers...")
+        logger.info(f"Starting proposal generation from {len(proposers)} proposers...")
 
         tasks = [
             proposer.analyze(incident_logs, f"proposer_{i}")
@@ -47,98 +47,98 @@ async def proposers_node(state: AIOpsState) -> dict:
         ]
         proposals = await asyncio.gather(*tasks, return_exceptions=True)
 
-        # Filter ra các proposals hợp lệ (không có exception)
+        # Filter out valid proposals (no exceptions)
         valid_proposals = []
         for i, proposal in enumerate(proposals):
             if isinstance(proposal, Exception):
-                logger.error(f"Proposer {i} gặp lỗi: {str(proposal)}")
+                logger.error(f"Proposer {i} encountered an error: {str(proposal)}")
             else:
                 valid_proposals.append(proposal)
 
-        logger.info(f"Đã tạo {len(valid_proposals)}/{len(proposals)} đề xuất hợp lệ")
+        logger.info(f"Generated {len(valid_proposals)}/{len(proposals)} valid proposals")
         return {"proposals": valid_proposals}
 
     except Exception as e:
-        logger.error(f"Lỗi trong proposers_node: {str(e)}")
+        logger.error(f"Error in proposers_node: {str(e)}")
         return {"proposals": []}
 
 
 async def judge_node(state: AIOpsState) -> dict:
     """
-    Node để Judge đánh giá các đề xuất hiện có.
+    Node for the Judge to evaluate existing proposals.
 
-    Kết quả là một Evaluation duy nhất được thêm vào state.evaluations.
+    The result is a single Evaluation added to state.evaluations.
 
-    Graceful degradation: Nếu không có proposals, trả về list rỗng.
+    Graceful degradation: If there are no proposals, returns an empty list.
     """
     proposals = state.get("proposals", [])
     if not proposals:
-        logger.warning("Không có proposal nào để Judge đánh giá.")
+        logger.warning("No proposals available for Judge evaluation.")
         return {"evaluations": []}
 
     try:
         incident_logs = state.get("incident_logs", "")
-        logger.info("Judge Agent bắt đầu đánh giá các đề xuất...")
+        logger.info("Judge Agent starting proposal evaluation...")
         evaluation = await judge_agent.evaluate(incident_logs, proposals)
-        logger.info("Judge Agent đã hoàn thành đánh giá.")
+        logger.info("Judge Agent has completed evaluation.")
         return {"evaluations": [evaluation]}
     except Exception as e:
-        logger.error(f"Lỗi trong judge_node: {str(e)}")
+        logger.error(f"Error in judge_node: {str(e)}")
         return {"evaluations": []}
 
 
 async def evaluate_proposals_node(state: AIOpsState) -> dict:
     """
-    Node trích xuất báo cáo cuối cùng từ Evaluation.
+    Node that extracts the final report from the Evaluation.
 
-    Lấy final_report từ evaluation đầu tiên và gắn vào state.final_report.
+    Takes the final_report from the first evaluation and attaches it to state.final_report.
 
-    Graceful degradation: Nếu không có evaluations, trả về None.
+    Graceful degradation: If there are no evaluations, returns None.
     """
     evaluations = state.get("evaluations", [])
     if not evaluations:
-        logger.warning("Không có evaluation nào để trích xuất final_report.")
+        logger.warning("No evaluations available to extract final_report.")
         return {"final_report": None}
 
     try:
         final_report = evaluations[0].final_report
-        logger.info("Đã trích xuất final_report từ Evaluation.")
+        logger.info("Extracted final_report from Evaluation.")
         return {"final_report": final_report}
     except Exception as e:
-        logger.error(f"Lỗi trong evaluate_proposals_node: {str(e)}")
+        logger.error(f"Error in evaluate_proposals_node: {str(e)}")
         return {"final_report": None}
 
 
 async def executor_node(state: AIOpsState) -> dict:
     """
-    Node thực thi các hành động remediation dựa trên final_report.
+    Node that executes remediation actions based on the final_report.
 
-    Graceful degradation: Nếu không có final_report, trả về list rỗng.
+    Graceful degradation: If there is no final_report, returns an empty list.
     """
     final_report = state.get("final_report")
     if not final_report:
-        logger.warning("Không có final_report, Executor không thực thi hành động.")
+        logger.warning("No final_report available, Executor will not execute actions.")
         return {"executed_actions": []}
 
     try:
         executed_actions = await executor_agent.execute_report_actions(final_report)
-        logger.info(f"Executor đã thực thi {len(executed_actions)} hành động.")
+        logger.info(f"Executor executed {len(executed_actions)} actions.")
         return {"executed_actions": executed_actions}
     except Exception as e:
-        logger.error(f"Lỗi trong executor_node: {str(e)}")
+        logger.error(f"Error in executor_node: {str(e)}")
         return {"executed_actions": []}
 
 
-# Xây dựng workflow LangGraph với conditional routing
+# Build LangGraph workflow with conditional routing
 workflow = StateGraph(AIOpsState)
 
-# Đăng ký các node chính
+# Register main nodes
 workflow.add_node("proposers", proposers_node)
 workflow.add_node("judge", judge_node)
 workflow.add_node("evaluate_proposals", evaluate_proposals_node)
 workflow.add_node("executor", executor_node)
 
-# Bước khởi đầu: dùng router để xác định điểm vào phù hợp
+# Initial step: use router to determine the appropriate entry point
 workflow.add_conditional_edges(
     START,
     route_incident_analysis,
@@ -150,14 +150,14 @@ workflow.add_conditional_edges(
     },
 )
 
-# Sau khi có proposals, luôn chuyển sang Judge để đánh giá
+# After proposals are generated, always move to Judge for evaluation
 workflow.add_edge("proposers", "judge")
 
-# Sau khi Judge đánh giá, tách final_report
+# After Judge evaluation, extract the final_report
 workflow.add_edge("judge", "evaluate_proposals")
 
-# Sau khi có final_report, dùng conditional edge để quyết định có cần Executor hay kết thúc
-# Chỉ chạy executor nếu final_report có data hợp lệ
+# After final_report extraction, use conditional edge to decide whether to run Executor or end
+# Only run executor if final_report has valid data
 workflow.add_conditional_edges(
     "evaluate_proposals",
     route_after_evaluation,
@@ -167,8 +167,8 @@ workflow.add_conditional_edges(
     },
 )
 
-# Executor là bước cuối cùng
+# Executor is the final step
 workflow.add_edge("executor", END)
 
-# Biên dịch graph
+# Compile the graph
 graph = workflow.compile()

@@ -4,32 +4,32 @@ from pydantic import BaseModel, Field
 from langgraph.graph import MessagesState
 
 class IncidentReport(BaseModel):
-    """Định nghĩa cấu trúc của một báo cáo sự cố"""
-    incident_id: str = Field(description="ID của sự cố")
-    timestamp: str = Field(description="Thời gian xảy ra sự cố")
-    description: str = Field(description="Mô tả chi tiết sự cố")
-    root_cause: str = Field(description="Nguyên nhân gốc rễ")
-    solution: str = Field(description="Giải pháp khắc phục")
-    confidence_score: float = Field(description="Điểm tin cậy (0-1)")
+    """Structure definition for an incident report"""
+    incident_id: str = Field(description="Incident ID")
+    timestamp: str = Field(description="Time of the incident")
+    description: str = Field(description="Detailed description of the incident")
+    root_cause: str = Field(description="Root cause")
+    solution: str = Field(description="Remediation solution")
+    confidence_score: float = Field(description="Confidence score (0-1)")
 
 class Proposal(BaseModel):
-    """Định nghĩa cấu trúc của một đề xuất từ Proposer"""
-    proposer_id: str = Field(description="ID của proposer")
-    report: IncidentReport = Field(description="Báo cáo phân tích")
-    timestamp: str = Field(description="Thời gian tạo đề xuất")
+    """Structure definition for a proposal from a Proposer"""
+    proposer_id: str = Field(description="Proposer ID")
+    report: IncidentReport = Field(description="Analysis report")
+    timestamp: str = Field(description="Proposal creation time")
 
 class Evaluation(BaseModel):
-    """Định nghĩa cấu trúc của một đánh giá từ Judge"""
-    judge_id: str = Field(description="ID của judge")
-    scores: List[float] = Field(description="Điểm số cho từng proposal (0-10)")
-    best_proposal: int = Field(description="Chỉ số của proposal tốt nhất")
-    reasoning: str = Field(description="Lý do cho quyết định")
-    final_report: IncidentReport = Field(description="Báo cáo tổng hợp cuối cùng")
+    """Structure definition for an evaluation from the Judge"""
+    judge_id: str = Field(description="Judge ID")
+    scores: List[float] = Field(description="Scores for each proposal (0-10)")
+    best_proposal: int = Field(description="Index of the best proposal")
+    reasoning: str = Field(description="Reasoning for the decision")
+    final_report: IncidentReport = Field(description="Final synthesized report")
 
 class AIOpsState(MessagesState):
-    """Định nghĩa trạng thái toàn cục của hệ thống AIOps"""
-    incident_logs: str                                          # Log sự cố đầu vào
-    proposals: Annotated[list, operator.add]                    # Danh sách các đề xuất từ các Proposers
-    evaluations: Annotated[list, operator.add]                  # Danh sách các đánh giá từ các Judges
-    final_report: Optional[IncidentReport]                      # Báo cáo cuối cùng sau khi tổng hợp
-    executed_actions: Annotated[list, operator.add]              # Danh sách các hành động đã được thực thi
+    """Global state definition for the AIOps system"""
+    incident_logs: str                                          # Input incident logs
+    proposals: Annotated[list, operator.add]                    # List of proposals from Proposers
+    evaluations: Annotated[list, operator.add]                  # List of evaluations from Judges
+    final_report: Optional[IncidentReport]                      # Final report after synthesis
+    executed_actions: Annotated[list, operator.add]              # List of executed actions

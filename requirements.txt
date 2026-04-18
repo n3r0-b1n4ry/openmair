@@ -1,18 +1,18 @@
-# AIOps Đa Tác Nhân - Requirements
+# Multi-Agent AIOps - Requirements
 # 
-# File này được chia thành 2 phần:
-# 1. requirements-core.txt: Core dependencies để chạy hệ thống
+# This file is split into 2 parts:
+# 1. requirements-core.txt: Core dependencies to run the system
 # 2. requirements-eval.txt: Evaluation & monitoring tools (optional)
 #
-# Cài đặt:
+# Installation:
 # - Core system: pip install -r requirements-core.txt
 # - Full system: pip install -r requirements-core.txt -r requirements-eval.txt
 
-# Core dependencies (xem requirements-core.txt)
+# Core dependencies (see requirements-core.txt)
 # LangChain, LangGraph, LLM Providers, Tenacity, Redis, OpenTelemetry, Pydantic
 
-# Optional dependencies (xem requirements-eval.txt)
+# Optional dependencies (see requirements-eval.txt)
 # DeepEval, Ragas, Prometheus-eval, Milvus, Pinecone, ELK Stack, Prometheus
 
-# Để cài đặt đầy đủ:
+# To install everything:
 # pip install -r requirements-core.txt -r requirements-eval.txt

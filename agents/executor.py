@@ -5,43 +5,43 @@ from orchestrator.state import IncidentReport
 logger = logging.getLogger(__name__)
 
 class ExecutorAgent:
-    """Agent chịu trách nhiệm thực thi các hành động dựa trên báo cáo cuối cùng"""
+    """Agent responsible for executing actions based on the final report"""
     
     def __init__(self):
-        """Khởi tạo ExecutorAgent"""
+        """Initialize ExecutorAgent"""
         pass
     
     async def execute_report_actions(self, report: IncidentReport) -> List[str]:
         """
-        Thực thi các hành động được đề xuất trong báo cáo
+        Execute the actions proposed in the report
         
         Args:
-            report (IncidentReport): Báo cáo cuối cùng từ judge
+            report (IncidentReport): Final report from the judge
             
         Returns:
-            List[str]: Danh sách các hành động đã được thực thi
+            List[str]: List of executed actions
         """
         executed_actions = []
         
         try:
-            # Trích xuất các hành động từ giải pháp
+            # Extract actions from the solution
             solution = report.solution if hasattr(report, 'solution') else ""
             
-            # Trong môi trường thực tế, đây sẽ là nơi thực thi các lệnh
-            # Ví dụ: gọi API, chạy script, v.v.
+            # In a production environment, this is where actual commands would be executed
+            # For example: calling APIs, running scripts, etc.
             
-            # Hiện tại, chúng ta chỉ mô phỏng việc thực thi
+            # Currently, we only simulate execution
             if solution:
-                action = f"Đã thực thi giải pháp: {solution}"
+                action = f"Executed solution: {solution}"
                 executed_actions.append(action)
                 logger.info(f"[EXECUTOR] {action}")
             else:
-                action = "Không có hành động nào để thực thi"
+                action = "No actions to execute"
                 executed_actions.append(action)
                 logger.warning(f"[EXECUTOR] {action}")
                 
         except Exception as e:
-            error_action = f"Lỗi khi thực thi hành động: {str(e)}"
+            error_action = f"Error executing action: {str(e)}"
             executed_actions.append(error_action)
             logger.error(f"[EXECUTOR] {error_action}")
         
@@ -49,23 +49,23 @@ class ExecutorAgent:
     
     async def execute_custom_action(self, action: str) -> str:
         """
-        Thực thi một hành động tùy chỉnh
+        Execute a custom action
         
         Args:
-            action (str): Hành động cần thực thi
+            action (str): Action to execute
             
         Returns:
-            str: Kết quả của hành động
+            str: Result of the action
         """
         try:
-            # Trong môi trường thực tế, đây sẽ là nơi thực thi hành động tùy chỉnh
-            # Ví dụ: gọi API, chạy script, v.v.
+            # In a production environment, this is where custom actions would be executed
+            # For example: calling APIs, running scripts, etc.
             
-            # Hiện tại, chúng ta chỉ mô phỏng việc thực thi
-            result = f"Đã thực thi hành động: {action}"
+            # Currently, we only simulate execution
+            result = f"Executed action: {action}"
             logger.info(f"[EXECUTOR] {result}")
             return result
         except Exception as e:
-            error_result = f"Lỗi khi thực thi hành động '{action}': {str(e)}"
+            error_result = f"Error executing action '{action}': {str(e)}"
             logger.error(f"[EXECUTOR] {error_result}")
             return error_result

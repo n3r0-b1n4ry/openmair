@@ -1,10 +1,10 @@
 version: '3.8'
 
 services:
-  # Dịch vụ vLLM cho mô hình Qwen 2.5 72B (Proposer) - Model mã nguồn mở mạnh mẽ nhất
-  vllm-qwen25:
+  # vLLM service for Qwen 3.5 27B (Proposer) - Currently the most powerful open-source model
+  vllm-qwen35:
     image: vllm/vllm-openai:latest
-    container_name: vllm-qwen25
+    container_name: vllm-qwen35
     ports:
       - "8000:8000"
     volumes:
@@ -17,7 +17,7 @@ services:
               count: 1
               capabilities: [gpu]
     command: [
-      "--model", "Qwen/Qwen2.5-72B-Instruct",
+      "--model", "Qwen/Qwen3.5-27B-Instruct",
       "--host", "0.0.0.0",
       "--port", "8000",
       "--gpu-memory-utilization", "0.90",
@@ -28,10 +28,10 @@ services:
     networks:
       - aiops_network
   
-  # Dịch vụ vLLM cho mô hình Llama 3.3 70B (Proposer) - Cập nhật từ Llama 3.1
-  vllm-llama33:
+  # vLLM service for Llama 4 17B (Proposer) - The most popular open-source model
+  vllm-llama4:
     image: vllm/vllm-openai:latest
-    container_name: vllm-llama33
+    container_name: vllm-llama4
     ports:
       - "8001:8000"
     volumes:
@@ -44,7 +44,7 @@ services:
               count: 1
               capabilities: [gpu]
     command: [
-      "--model", "meta-llama/Llama-3.3-70B-Instruct",
+      "--model", "meta-llama/Meta-Llama-4-17B-Instruct",
       "--host", "0.0.0.0",
       "--port", "8000",
       "--gpu-memory-utilization", "0.90",
@@ -55,10 +55,10 @@ services:
     networks:
       - aiops_network
 
-  # Dịch vụ vLLM cho mô hình QwQ-32B (Proposer) - Thay thế Mistral Large 2, reasoning chain-of-thought
-  vllm-qwq:
+  # vLLM service for Devstral Small 2 24B (Proposer) - Chain-of-thought reasoning model
+  vllm-devstral:
     image: vllm/vllm-openai:latest
-    container_name: vllm-qwq
+    container_name: vllm-devstral
     ports:
       - "8002:8000"
     volumes:
@@ -71,7 +71,7 @@ services:
               count: 1
               capabilities: [gpu]
     command: [
-      "--model", "Qwen/QwQ-32B-Preview",
+      "--model", "mistralai/Devstral-Small-2-24B-Instruct",
       "--host", "0.0.0.0",
       "--port", "8000",
       "--gpu-memory-utilization", "0.90",
@@ -81,10 +81,10 @@ services:
     networks:
       - aiops_network
 
-  # Dịch vụ vLLM cho mô hình DeepSeek V3 (Proposer) - Model mã nguồn mở mới nhất
-  vllm-deepseek:
+  # vLLM service for Gemma 4 27B (Proposer) - The latest open-source model
+  vllm-gemma4:
     image: vllm/vllm-openai:latest
-    container_name: vllm-deepseek
+    container_name: vllm-gemma4
     ports:
       - "8003:8000"
     volumes:
@@ -97,7 +97,7 @@ services:
               count: 1
               capabilities: [gpu]
     command: [
-      "--model", "deepseek-ai/DeepSeek-V3",
+      "--model", "google/Gemma-4-27B-Instruct",
       "--host", "0.0.0.0",
       "--port", "8000",
       "--gpu-memory-utilization", "0.90",
@@ -107,7 +107,7 @@ services:
     networks:
       - aiops_network
 
-  # Dịch vụ vLLM cho mô hình DeepSeek R1 Distill Llama 70B (Proposer) - Model reasoning mạnh mẽ
+  # vLLM service for DeepSeek R1 Distill Llama 70B (Proposer) - Powerful reasoning model
   vllm-r1-distill:
     image: vllm/vllm-openai:latest
     container_name: vllm-r1-distill
@@ -134,7 +134,7 @@ services:
     networks:
       - aiops_network
 
-  # Dịch vụ Nginx làm Load Balancer
+  # Nginx Load Balancer
   nginx:
     image: nginx:latest
     container_name: nginx-lb
@@ -143,15 +143,15 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
     depends_on:
-      - vllm-qwen25
-      - vllm-llama33
-      - vllm-qwq
-      - vllm-deepseek
+      - vllm-qwen35
+      - vllm-llama4
+      - vllm-devstral
+      - vllm-gemma4
       - vllm-r1-distill
     networks:
       - aiops_network
 
-  # Redis Service - Caching và Rate Limiting
+  # Redis Service - Caching and Rate Limiting
   redis:
     image: redis:7-alpine
     container_name: redis-cache
@@ -168,7 +168,7 @@ services:
     networks:
       - aiops_network
 
-  # Milvus etcd - Metadata storage cho Milvus
+  # Milvus etcd - Metadata storage for Milvus
   milvus-etcd:
     image: quay.io/coreos/etcd:v3.5.5
     container_name: milvus-etcd
@@ -183,7 +183,7 @@ services:
     networks:
       - aiops_network
 
-  # Milvus MinIO - Object storage cho Milvus
+  # Milvus MinIO - Object storage for Milvus
   milvus-minio:
     image: minio/minio:RELEASE.2023-03-20T20-16-18Z
     container_name: milvus-minio

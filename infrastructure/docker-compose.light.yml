@@ -1,11 +1,11 @@
 version: '3.8'
 
 services:
-  # Dịch vụ vLLM cho mô hình Qwen 2.5 72B (Proposer) - Model mã nguồn mở mạnh mẽ nhất
-  # Có thể thay đổi thành Llama 3.3 70B bằng cách sửa model_id
-  vllm-qwen25:
+  # vLLM service for Qwen 3.5 27B (Proposer) - Currently the most powerful open-source model
+  # Can be switched to Llama 4 17B by changing the model_id
+  vllm-qwen35:
     image: vllm/vllm-openai:latest
-    container_name: vllm-qwen25-light
+    container_name: vllm-qwen35-light
     ports:
       - "8000:8000"
     volumes:
@@ -18,7 +18,7 @@ services:
               count: 1
               capabilities: [gpu]
     command: [
-      "--model", "Qwen/Qwen2.5-72B-Instruct",
+      "--model", "Qwen/Qwen3.5-27B-Instruct",
       "--host", "0.0.0.0",
       "--port", "8000",
       "--gpu-memory-utilization", "0.95",
@@ -30,7 +30,7 @@ services:
       - aiops_network
     restart: unless-stopped
 
-  # Redis Service - Caching và Rate Limiting
+  # Redis Service - Caching and Rate Limiting
   redis:
     image: redis:7-alpine
     container_name: redis-cache-light
@@ -59,10 +59,10 @@ volumes:
   redis_data:
     driver: local
 
-# Sử dụng lệnh sau để chạy:
+# Usage:
 # docker-compose -f infrastructure/docker-compose.light.yml up -d
 #
-# Để chạy với Llama 3.3 thay vì Qwen 2.5:
-# 1. Sửa model_id trong command thành "meta-llama/Llama-3.3-70B-Instruct"
-# 2. Sửa container_name thành "vllm-llama33-light"
+# To use Llama 4 17B instead of Qwen 3.5 27B:
+# 1. Change the model_id in the command to "meta-llama/Meta-Llama-4-17B-Instruct"
+# 2. Change the container_name to "vllm-llama4-light"
 # 3. Restart: docker-compose -f infrastructure/docker-compose.light.yml up -d --force-recreate

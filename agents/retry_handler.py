@@ -1,7 +1,7 @@
 """
-Advanced Error Handling & Retry Handler cho hệ thống AIOps
+Advanced Error Handling & Retry Handler for the AIOps System
 
-Hỗ trợ cả sync và async functions.
+Supports both sync and async functions.
 """
 import asyncio
 import logging
@@ -21,18 +21,18 @@ logger = logging.getLogger(__name__)
 
 
 class CircuitState(Enum):
-    """Trạng thái của Circuit Breaker"""
-    CLOSED = "closed"  # Bình thường, cho phép request đi qua
-    OPEN = "open"      # Đã mở, chặn request
-    HALF_OPEN = "half_open"  # Đang thử lại
+    """Circuit Breaker states"""
+    CLOSED = "closed"  # Normal, allows requests to pass through
+    OPEN = "open"      # Open, blocks requests
+    HALF_OPEN = "half_open"  # Testing recovery
 
 
 class CircuitBreaker:
     """
-    Circuit Breaker Pattern để ngăn chặn cascade failures
+    Circuit Breaker Pattern to prevent cascade failures
     
-    Khi một service fail quá nhiều lần, circuit breaker sẽ mở để ngăn chặn
-    các request tiếp theo, giúp hệ thống không bị quá tải.
+    When a service fails too many times, the circuit breaker opens to prevent
+    further requests, helping the system avoid overload.
     """
     
     def __init__(
@@ -42,12 +42,12 @@ class CircuitBreaker:
         expected_exception: Type[Exception] = Exception
     ):
         """
-        Khởi tạo Circuit Breaker
+        Initialize Circuit Breaker
         
         Args:
-            failure_threshold (int): Số lần fail tối đa trước khi mở circuit
-            recovery_timeout (float): Thời gian chờ trước khi thử lại (giây)
-            expected_exception (Type[Exception]): Loại exception cần theo dõi
+            failure_threshold (int): Maximum failures before opening the circuit
+            recovery_timeout (float): Time to wait before retrying (seconds)
+            expected_exception (Type[Exception]): Exception type to track
         """
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
@@ -58,13 +58,13 @@ class CircuitBreaker:
     
     def call(self, func: Callable) -> Callable:
         """
-        Decorator để wrap function với circuit breaker (hỗ trợ cả sync và async)
+        Decorator to wrap a function with circuit breaker (supports both sync and async)
         
         Args:
-            func (Callable): Function cần wrap
+            func (Callable): Function to wrap
             
         Returns:
-            Callable: Function đã được wrap
+            Callable: Wrapped function
         """
         if asyncio.iscoroutinefunction(func):
             @wraps(func)
@@ -72,16 +72,16 @@ class CircuitBreaker:
                 if self.state == CircuitState.OPEN:
                     if self._should_attempt_reset():
                         self.state = CircuitState.HALF_OPEN
-                        logger.info("Circuit breaker chuyển sang HALF_OPEN state")
+                        logger.info("Circuit breaker transitioning to HALF_OPEN state")
                     else:
-                        raise Exception("Circuit breaker đang OPEN, request bị chặn")
+                        raise Exception("Circuit breaker is OPEN, request blocked")
                 
                 try:
                     result = await func(*args, **kwargs)
                     
                     if self.state == CircuitState.HALF_OPEN:
                         self._reset()
-                        logger.info("Circuit breaker đã reset về CLOSED state")
+                        logger.info("Circuit breaker has reset to CLOSED state")
                     
                     return result
                 except self.expected_exception as e:
@@ -95,16 +95,16 @@ class CircuitBreaker:
                 if self.state == CircuitState.OPEN:
                     if self._should_attempt_reset():
                         self.state = CircuitState.HALF_OPEN
-                        logger.info("Circuit breaker chuyển sang HALF_OPEN state")
+                        logger.info("Circuit breaker transitioning to HALF_OPEN state")
                     else:
-                        raise Exception("Circuit breaker đang OPEN, request bị chặn")
+                        raise Exception("Circuit breaker is OPEN, request blocked")
                 
                 try:
                     result = func(*args, **kwargs)
                     
                     if self.state == CircuitState.HALF_OPEN:
                         self._reset()
-                        logger.info("Circuit breaker đã reset về CLOSED state")
+                        logger.info("Circuit breaker has reset to CLOSED state")
                     
                     return result
                 except self.expected_exception as e:
@@ -114,31 +114,31 @@ class CircuitBreaker:
             return wrapper
     
     def _should_attempt_reset(self) -> bool:
-        """Kiểm tra xem có nên thử reset circuit không"""
+        """Check if a circuit reset should be attempted"""
         if self.last_failure_time is None:
             return False
         return time.time() - self.last_failure_time >= self.recovery_timeout
     
     def _on_failure(self):
-        """Xử lý khi có failure"""
+        """Handle a failure"""
         self.failure_count += 1
         self.last_failure_time = time.time()
         
         if self.failure_count >= self.failure_threshold:
             self.state = CircuitState.OPEN
             logger.warning(
-                f"Circuit breaker đã OPEN sau {self.failure_count} failures. "
-                f"Sẽ thử lại sau {self.recovery_timeout} giây"
+                f"Circuit breaker OPENED after {self.failure_count} failures. "
+                f"Will retry after {self.recovery_timeout} seconds"
             )
     
     def _reset(self):
-        """Reset circuit breaker về trạng thái bình thường"""
+        """Reset circuit breaker to normal state"""
         self.failure_count = 0
         self.last_failure_time = None
         self.state = CircuitState.CLOSED
 
 
-# Tạo circuit breaker mặc định cho LLM calls
+# Create default circuit breaker for LLM calls
 llm_circuit_breaker = CircuitBreaker(
     failure_threshold=5,
     recovery_timeout=60.0,
@@ -153,15 +153,15 @@ def with_retry(
     exponential_base: int = 2
 ):
     """
-    Decorator để thêm retry logic với exponential backoff
+    Decorator to add retry logic with exponential backoff
     
-    tenacity >= 8.2.0 tự động hỗ trợ async functions.
+    tenacity >= 8.2.0 automatically supports async functions.
     
     Args:
-        max_attempts (int): Số lần thử tối đa
-        min_wait (float): Thời gian chờ tối thiểu (giây)
-        max_wait (float): Thời gian chờ tối đa (giây)
-        exponential_base (int): Cơ số cho exponential backoff
+        max_attempts (int): Maximum number of attempts
+        min_wait (float): Minimum wait time (seconds)
+        max_wait (float): Maximum wait time (seconds)
+        exponential_base (int): Base for exponential backoff
     """
     def decorator(func: Callable) -> Callable:
         retry_decorator = retry(
@@ -176,11 +176,11 @@ def with_retry(
 
 def with_circuit_breaker(circuit_breaker: Optional[CircuitBreaker] = None):
     """
-    Decorator để thêm circuit breaker pattern
+    Decorator to add circuit breaker pattern
     
     Args:
-        circuit_breaker (Optional[CircuitBreaker]): Circuit breaker instance. 
-                                                   Nếu None, sử dụng mặc định
+        circuit_breaker (Optional[CircuitBreaker]): Circuit breaker instance.
+                                                   If None, uses default
     """
     if circuit_breaker is None:
         circuit_breaker = llm_circuit_breaker
@@ -198,18 +198,18 @@ def with_retry_and_circuit_breaker(
     circuit_breaker: Optional[CircuitBreaker] = None
 ):
     """
-    Decorator kết hợp cả retry và circuit breaker
+    Decorator combining both retry and circuit breaker
     
     Args:
-        max_attempts (int): Số lần thử tối đa
-        min_wait (float): Thời gian chờ tối thiểu (giây)
-        max_wait (float): Thời gian chờ tối đa (giây)
+        max_attempts (int): Maximum number of attempts
+        min_wait (float): Minimum wait time (seconds)
+        max_wait (float): Maximum wait time (seconds)
         circuit_breaker (Optional[CircuitBreaker]): Circuit breaker instance
     """
     def decorator(func: Callable) -> Callable:
-        # Áp dụng retry trước
+        # Apply retry first
         func_with_retry = with_retry(max_attempts, min_wait, max_wait)(func)
-        # Sau đó áp dụng circuit breaker
+        # Then apply circuit breaker
         func_with_cb = with_circuit_breaker(circuit_breaker)(func_with_retry)
         
         return func_with_cb
@@ -219,18 +219,18 @@ def with_retry_and_circuit_breaker(
 
 class RateLimiter:
     """
-    Rate Limiter để giới hạn số lượng request trong một khoảng thời gian
+    Rate Limiter to restrict the number of requests within a time window
     
-    Sử dụng Token Bucket algorithm để implement rate limiting
+    Uses the Token Bucket algorithm to implement rate limiting
     """
     
     def __init__(self, max_requests: int, time_window: float):
         """
-        Khởi tạo Rate Limiter
+        Initialize Rate Limiter
         
         Args:
-            max_requests (int): Số request tối đa trong time window
-            time_window (float): Khoảng thời gian (giây)
+            max_requests (int): Maximum requests in the time window
+            time_window (float): Time window (seconds)
         """
         self.max_requests = max_requests
         self.time_window = time_window
@@ -238,20 +238,20 @@ class RateLimiter:
     
     def allow_request(self) -> bool:
         """
-        Kiểm tra xem request có được phép thực hiện không
+        Check if a request is allowed
         
         Returns:
-            bool: True nếu được phép, False nếu không
+            bool: True if allowed, False if not
         """
         current_time = time.time()
         
-        # Xóa các request cũ ngoài time window
+        # Remove old requests outside the time window
         self.requests = [
             req_time for req_time in self.requests
             if current_time - req_time < self.time_window
         ]
         
-        # Kiểm tra số lượng request
+        # Check request count
         if len(self.requests) < self.max_requests:
             self.requests.append(current_time)
             return True
@@ -260,10 +260,10 @@ class RateLimiter:
     
     def wait_time(self) -> float:
         """
-        Tính thời gian cần chờ trước khi request tiếp theo được phép
+        Calculate the wait time before the next request is allowed
         
         Returns:
-            float: Thời gian chờ (giây)
+            float: Wait time (seconds)
         """
         if not self.requests:
             return 0.0
@@ -275,7 +275,7 @@ class RateLimiter:
 
 def with_rate_limiter(rate_limiter: RateLimiter):
     """
-    Decorator để thêm rate limiting (hỗ trợ cả sync và async)
+    Decorator to add rate limiting (supports both sync and async)
     
     Args:
         rate_limiter (RateLimiter): Rate limiter instance
@@ -287,7 +287,7 @@ def with_rate_limiter(rate_limiter: RateLimiter):
                 if not rate_limiter.allow_request():
                     wt = rate_limiter.wait_time()
                     logger.warning(
-                        f"Rate limit exceeded. Cần chờ {wt:.2f} giây"
+                        f"Rate limit exceeded. Waiting {wt:.2f} seconds"
                     )
                     await asyncio.sleep(wt)
                 
@@ -300,7 +300,7 @@ def with_rate_limiter(rate_limiter: RateLimiter):
                 if not rate_limiter.allow_request():
                     wt = rate_limiter.wait_time()
                     logger.warning(
-                        f"Rate limit exceeded. Cần chờ {wt:.2f} giây"
+                        f"Rate limit exceeded. Waiting {wt:.2f} seconds"
                     )
                     time.sleep(wt)
                 
@@ -310,8 +310,8 @@ def with_rate_limiter(rate_limiter: RateLimiter):
     return decorator
 
 
-# Tạo rate limiter mặc định cho LLM API calls
-llm_rate_limiter = RateLimiter(max_requests=10, time_window=1.0)  # 10 requests/giây
+# Create default rate limiter for LLM API calls
+llm_rate_limiter = RateLimiter(max_requests=10, time_window=1.0)  # 10 requests/second
 
 
 def with_all_protections(
@@ -322,29 +322,29 @@ def with_all_protections(
     rate_limiter: Optional[RateLimiter] = None
 ):
     """
-    Decorator kết hợp tất cả các cơ chế bảo vệ:
-    - Retry với exponential backoff
+    Decorator combining all protection mechanisms:
+    - Retry with exponential backoff
     - Circuit breaker
     - Rate limiting
     
     Args:
-        max_attempts (int): Số lần thử tối đa
-        min_wait (float): Thời gian chờ tối thiểu (giây)
-        max_wait (float): Thời gian chờ tối đa (giây)
+        max_attempts (int): Maximum number of attempts
+        min_wait (float): Minimum wait time (seconds)
+        max_wait (float): Maximum wait time (seconds)
         circuit_breaker (Optional[CircuitBreaker]): Circuit breaker instance
         rate_limiter (Optional[RateLimiter]): Rate limiter instance
     """
     def decorator(func: Callable) -> Callable:
-        # Sử dụng biến local để tránh UnboundLocalError
+        # Use local variable to avoid UnboundLocalError
         _rate_limiter = rate_limiter if rate_limiter is not None else llm_rate_limiter
         
-        # Áp dụng rate limiting
+        # Apply rate limiting
         func_with_rl = with_rate_limiter(_rate_limiter)(func)
         
-        # Áp dụng retry
+        # Apply retry
         func_with_retry = with_retry(max_attempts, min_wait, max_wait)(func_with_rl)
         
-        # Áp dụng circuit breaker
+        # Apply circuit breaker
         func_with_cb = with_circuit_breaker(circuit_breaker)(func_with_retry)
         
         return func_with_cb
@@ -352,7 +352,7 @@ def with_all_protections(
     return decorator
 
 
-# Export các decorator và class
+# Export decorators and classes
 __all__ = [
     "CircuitBreaker",
     "CircuitState",

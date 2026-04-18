@@ -18,7 +18,7 @@ try:
     DEEPEVAL_AVAILABLE = True
 except ImportError:
     DEEPEVAL_AVAILABLE = False
-    logger.warning("DeepEval không được cài đặt. Một số tính năng đánh giá sẽ bị giới hạn.")
+    logger.warning("DeepEval is not installed. Some evaluation features will be limited.")
 
 try:
     from ragas import evaluate as ragas_evaluate
@@ -26,44 +26,44 @@ try:
     RAGAS_AVAILABLE = True
 except ImportError:
     RAGAS_AVAILABLE = False
-    logger.warning("Ragas không được cài đặt. Một số tính năng đánh giá sẽ bị giới hạn.")
+    logger.warning("Ragas is not installed. Some evaluation features will be limited.")
 
 try:
     from prometheus_eval import PrometheusEval
     PROMETHEUS_EVAL_AVAILABLE = True
 except ImportError:
     PROMETHEUS_EVAL_AVAILABLE = False
-    logger.warning("Prometheus-eval không được cài đặt. Một số tính năng đánh giá sẽ bị giới hạn.")
+    logger.warning("Prometheus-eval is not installed. Some evaluation features will be limited.")
 
 class JudgeAgent:
-    """Agent đóng vai trò judge để đánh giá các đề xuất từ proposers"""
+    """Agent acting as the judge to evaluate proposals from proposers"""
     
     def __init__(self, model_name: Optional[str] = None, temperature: float = 0.0):
         """
-        Khởi tạo JudgeAgent
+        Initialize JudgeAgent
         
         Args:
-            model_name (Optional[str]): Tên mô hình LLM cho judge. Nếu None, sử dụng model mặc định từ config
-            temperature (float): Độ ngẫu nhiên của mô hình
+            model_name (Optional[str]): LLM model name for the judge. If None, uses default from config
+            temperature (float): Model temperature
         """
         config = Config()
         
-        # Sử dụng model được cấu hình hoặc model mặc định
+        # Use configured model or default model
         if model_name is None:
             model_name = config.JUDGE_MODEL
         
-        # Khởi tạo model dựa trên loại model
+        # Initialize model based on model type
         if "claude" in model_name.lower():
-            # Sử dụng Claude 3.5 Sonnet - Model tốt nhất cho reasoning
+            # Use Claude Opus 4.7 - Best model for reasoning
             self.model = ChatAnthropic(
                 model=model_name,
                 temperature=temperature,
                 max_tokens=8192,
                 timeout=120
             )
-            logger.info(f"Đã khởi tạo Judge Agent với Claude model: {model_name}")
+            logger.info(f"Initialized Judge Agent with Claude model: {model_name}")
         elif "gemini" in model_name.lower():
-            # Sử dụng Gemini 2.5 Pro - Model mới nhất từ Google
+            # Use Gemini 3.1 Pro - Latest model from Google
             from langchain_google_genai import ChatGoogleGenerativeAI
             self.model = ChatGoogleGenerativeAI(
                 model=model_name,
@@ -71,100 +71,100 @@ class JudgeAgent:
                 max_tokens=8192,
                 timeout=120
             )
-            logger.info(f"Đã khởi tạo Judge Agent với Gemini model: {model_name}")
+            logger.info(f"Initialized Judge Agent with Gemini model: {model_name}")
         else:
-            # Mặc định sử dụng GPT-4o
+            # Default to GPT-4o
             self.model = ChatOpenAI(
                 model=model_name,
                 temperature=temperature,
                 max_tokens=8192,
                 timeout=120
             )
-            logger.info(f"Đã khởi tạo Judge Agent với OpenAI model: {model_name}")
+            logger.info(f"Initialized Judge Agent with OpenAI model: {model_name}")
         
-        # Định nghĩa schema cho output
+        # Define output schema
         from pydantic import BaseModel, Field
         
         class EvaluationOutput(BaseModel):
-            scores: List[float] = Field(description="Điểm số cho từng proposal (0-10)")
-            best_proposal: int = Field(description="Chỉ số của proposal tốt nhất")
-            reasoning: str = Field(description="Lý do cho quyết định")
-            final_report: IncidentReport = Field(description="Báo cáo tổng hợp cuối cùng")
+            scores: List[float] = Field(description="Scores for each proposal (0-10)")
+            best_proposal: int = Field(description="Index of the best proposal")
+            reasoning: str = Field(description="Reasoning for the decision")
+            final_report: IncidentReport = Field(description="Final synthesized report")
         
         self.parser = PydanticOutputParser(pydantic_object=EvaluationOutput)
         
-        # Template prompt cho judge với Chain-of-Thought
+        # Judge prompt template with Chain-of-Thought
         self.prompt_template = ChatPromptTemplate.from_messages([
-            ("system", """Bạn là một chuyên gia đánh giá chất lượng báo cáo phân tích sự cố hệ thống với kinh nghiệm sâu rộng trong việc quản lý hạ tầng công nghệ thông tin phức tạp.
+            ("system", """You are an expert evaluator of system incident analysis reports with extensive experience in managing complex IT infrastructure.
 
-Nhiệm vụ của bạn là đánh giá các báo cáo phân tích sự cố được cung cấp và chọn ra báo cáo tốt nhất, sau đó tổng hợp thành một báo cáo cuối cùng tối ưu.
+Your task is to evaluate the provided incident analysis reports, select the best one, and synthesize an optimal final report.
 
-Nguyên tắc đánh giá:
-1. Tính chính xác của phân tích nguyên nhân gốc rễ (Root Cause Analysis)
-2. Tính khả thi và hiệu quả của giải pháp đề xuất
-3. Mức độ chi tiết và toàn diện của báo cáo
-4. Điểm tin cậy được cung cấp trong báo cáo
-5. Khả năng triển khai ngay lập tức của giải pháp
+Evaluation criteria:
+1. Accuracy of Root Cause Analysis
+2. Feasibility and effectiveness of the proposed solution
+3. Level of detail and comprehensiveness of the report
+4. Confidence score provided in the report
+5. Immediate deployability of the solution
 
-Yêu cầu quan trọng:
-- GIỮ SỰ TRUNG LẬP TUYỆT ĐỐI: Không để thứ tự xuất hiện của các báo cáo ảnh hưởng đến quyết định
-- BỎ QUA ĐỘ DÀI VĂN BẢN: Tập trung vào chất lượng và tính thực thi, không ưu tiên báo cáo dài dòng
-- KHỬ DANH TÍNH: Đánh giá dựa trên nội dung, không dựa trên tên model
-- SỬ DỤNG CHAIN-OF-THOUGHT: Tự phân tích log trước khi đánh giá các báo cáo
-- TỔNG HỢP ĐIỂM MẠNH: Kết hợp các điểm mạnh từ các báo cáo để tạo giải pháp tối ưu"""),
+Critical requirements:
+- MAINTAIN ABSOLUTE NEUTRALITY: Do not let the order of reports influence your decision
+- IGNORE TEXT LENGTH: Focus on quality and actionability, not verbose reports
+- ANONYMIZE IDENTITIES: Evaluate based on content, not model names
+- USE CHAIN-OF-THOUGHT: Analyze the logs yourself before evaluating the reports
+- SYNTHESIZE STRENGTHS: Combine strengths from all reports to create the optimal solution"""),
             ("human", """
-            Dưới đây là log sự cố cần phân tích và các báo cáo từ các chuyên gia phân tích:
+            Below are the incident logs to analyze and reports from the analysis experts:
             
-            === LOG SỰ CỐ ===
+            === INCIDENT LOGS ===
             {incident_logs}
             
-            === CÁC BÁO CÁO PHÂN TÍCH ===
+            === ANALYSIS REPORTS ===
             {proposals_content}
             
-            Hãy thực hiện các bước sau theo quy trình Chain-of-Thought:
+            Follow these Chain-of-Thought steps:
             
-            BƯỚC 1: Tự phân tích log sự cố
-            - Xác định các sự kiện chính trong log
-            - Phân tích mối tương quan giữa các sự kiện
-            - Xác định nguyên nhân gốc rễ có thể
+            STEP 1: Independently analyze the incident logs
+            - Identify the key events in the logs
+            - Analyze correlations between events
+            - Identify potential root causes
             
-            BƯỚC 2: Đánh giá từng báo cáo
-            - Chỉ ra các điểm mạnh và điểm yếu của từng báo cáo
-            - Xác định các lỗi sai trong suy luận (nếu có)
-            - Đánh giá tính khả thi của giải pháp
+            STEP 2: Evaluate each report
+            - Identify strengths and weaknesses of each report
+            - Identify reasoning errors (if any)
+            - Assess feasibility of the proposed solutions
             
-            BƯỚC 3: Tổng hợp giải pháp tối ưu
-            - Kết hợp các điểm mạnh từ các báo cáo
-            - Tạo giải pháp khắc phục hiệu quả nhất
-            - Đảm bảo giải pháp có thể triển khai ngay lập tức
+            STEP 3: Synthesize the optimal solution
+            - Combine strengths from all reports
+            - Create the most effective remediation solution
+            - Ensure the solution can be deployed immediately
             
-            BƯỚC 4: Đưa ra phán quyết cuối cùng
-            - Chấm điểm từng báo cáo (0-10)
-            - Chọn báo cáo tốt nhất
-            - Giải thích lý do cho quyết định
+            STEP 4: Make the final verdict
+            - Score each report (0-10)
+            - Select the best report
+            - Explain the reasoning for your decision
             
             {format_instructions}
             """)
         ])
         
-        # Tạo chain
+        # Create chain
         self.chain = self.prompt_template | self.model | self.parser
     
     def _anonymize_proposals(self, proposals: List[Proposal]) -> List[Proposal]:
         """
-        Ẩn danh tính các proposer để tránh bias
+        Anonymize proposer identities to avoid bias
         
         Args:
-            proposals (List[Proposal]): Danh sách các proposal gốc
+            proposals (List[Proposal]): List of original proposals
             
         Returns:
-            List[Proposal]: Danh sách các proposal đã ẩn danh tính
+            List[Proposal]: List of anonymized proposals
         """
         anonymized = []
         for i, proposal in enumerate(proposals):
-            # Tạo bản sao và thay đổi ID
+            # Create a copy and change the ID
             anon_proposal = Proposal(
-                proposer_id=f"Trợ lý {chr(65+i)}",  # A, B, C, ...
+                proposer_id=f"Assistant {chr(65+i)}",  # A, B, C, ...
                 report=proposal.report,
                 timestamp=proposal.timestamp
             )
@@ -173,13 +173,13 @@ Yêu cầu quan trọng:
     
     def _shuffle_proposals(self, proposals: List[Proposal]) -> List[Proposal]:
         """
-        Xáo trộn thứ tự các proposal để tránh position bias
+        Shuffle the order of proposals to avoid position bias
         
         Args:
-            proposals (List[Proposal]): Danh sách các proposal gốc
+            proposals (List[Proposal]): List of original proposals
             
         Returns:
-            List[Proposal]: Danh sách các proposal đã xáo trộn
+            List[Proposal]: List of shuffled proposals
         """
         shuffled = list(proposals)
         random.shuffle(shuffled)
@@ -190,24 +190,24 @@ Yêu cầu quan trọng:
                    reference_solution: Optional[str] = None,
                    evaluation_history: Optional[List[Dict[str, Any]]] = None) -> Evaluation:
         """
-        Đánh giá các proposal và tạo ra evaluation
+        Evaluate proposals and produce an evaluation
         
         Args:
-            incident_logs (str): Log sự cố gốc
-            proposals (List[Proposal]): Danh sách các proposal cần đánh giá
-            use_frameworks (bool): Có sử dụng evaluation frameworks không
-            reference_solution (Optional[str]): Giải pháp tham chiếu cho reference-guided evaluation
-            evaluation_history (Optional[List[Dict[str, Any]]]): Lịch sử đánh giá cho continuous evaluation
+            incident_logs (str): Original incident logs
+            proposals (List[Proposal]): List of proposals to evaluate
+            use_frameworks (bool): Whether to use evaluation frameworks
+            reference_solution (Optional[str]): Reference solution for reference-guided evaluation
+            evaluation_history (Optional[List[Dict[str, Any]]]): Evaluation history for continuous evaluation
             
         Returns:
-            Evaluation: Kết quả đánh giá
+            Evaluation: Evaluation result
         """
         try:
-            logger.info(f"Judge Agent bắt đầu đánh giá {len(proposals)} đề xuất...")
+            logger.info(f"Judge Agent starting evaluation of {len(proposals)} proposals...")
             
-            # Nếu sử dụng evaluation frameworks
+            # If using evaluation frameworks
             if use_frameworks:
-                logger.info("Sử dụng evaluation frameworks nâng cao...")
+                logger.info("Using advanced evaluation frameworks...")
                 framework_results = await self.evaluate_with_all_frameworks(
                     incident_logs=incident_logs,
                     proposals=proposals,
@@ -215,52 +215,52 @@ Yêu cầu quan trọng:
                     evaluation_history=evaluation_history
                 )
                 
-                # Sử dụng điểm tổng hợp từ frameworks
+                # Use aggregated scores from frameworks
                 if "aggregated_scores" in framework_results:
                     framework_scores = framework_results["aggregated_scores"]
                     best_proposal = framework_scores.index(max(framework_scores))
                     
-                    # Tạo evaluation với kết quả từ frameworks
+                    # Create evaluation with framework results
                     evaluation = Evaluation(
                         judge_id="oracle-judge-with-frameworks",
                         scores=framework_scores,
                         best_proposal=best_proposal,
-                        reasoning=f"Đánh giá với các frameworks: DeepEval, Ragas, Prometheus-eval. "
+                        reasoning=f"Evaluated with frameworks: DeepEval, Ragas, Prometheus-eval. "
                                  f"Trend: {framework_results.get('trend_analysis', {}).get('trend', 'N/A')}",
                         final_report=proposals[best_proposal].report
                     )
                     
-                    logger.info(f"Judge Agent hoàn thành đánh giá với frameworks. Điểm số: {framework_scores}")
+                    logger.info(f"Judge Agent completed evaluation with frameworks. Scores: {framework_scores}")
                     return evaluation
             
-            # Ẩn danh tính các proposer
+            # Anonymize proposer identities
             anonymized_proposals = self._anonymize_proposals(proposals)
             
-            # Xáo trộn thứ tự để tránh position bias
+            # Shuffle order to avoid position bias
             shuffled_proposals = self._shuffle_proposals(anonymized_proposals)
             
-            # Tạo nội dung cho prompt
+            # Prepare prompt content
             proposals_content = ""
             for i, proposal in enumerate(shuffled_proposals):
                 proposals_content += f"""
-                === BÁO CÁO TỪ {proposal.proposer_id.upper()} ===
-                ID sự cố: {proposal.report.incident_id}
-                Thời gian: {proposal.report.timestamp}
-                Mô tả: {proposal.report.description}
-                Nguyên nhân gốc rễ: {proposal.report.root_cause}
-                Giải pháp: {proposal.report.solution}
-                Điểm tin cậy: {proposal.report.confidence_score}
+                === REPORT FROM {proposal.proposer_id.upper()} ===
+                Incident ID: {proposal.report.incident_id}
+                Timestamp: {proposal.report.timestamp}
+                Description: {proposal.report.description}
+                Root Cause: {proposal.report.root_cause}
+                Solution: {proposal.report.solution}
+                Confidence Score: {proposal.report.confidence_score}
                 =====================
                 """
             
-            # Gọi mô hình để đánh giá
+            # Invoke the model for evaluation
             result = await self.chain.ainvoke({
                 "incident_logs": incident_logs,
                 "proposals_content": proposals_content,
                 "format_instructions": self.parser.get_format_instructions()
             })
             
-            # Tạo evaluation
+            # Create evaluation
             evaluation = Evaluation(
                 judge_id="oracle-judge",
                 scores=result.scores,
@@ -269,17 +269,17 @@ Yêu cầu quan trọng:
                 final_report=result.final_report
             )
             
-            logger.info(f"Judge Agent hoàn thành đánh giá. Điểm số: {result.scores}")
+            logger.info(f"Judge Agent completed evaluation. Scores: {result.scores}")
             return evaluation
         except Exception as e:
-            # Trong trường hợp có lỗi, tạo một evaluation mặc định
-            logger.error(f"Lỗi khi đánh giá các đề xuất: {str(e)}")
+            # In case of error, create a default evaluation
+            logger.error(f"Error evaluating proposals: {str(e)}")
             default_report = IncidentReport(
                 incident_id="unknown",
                 timestamp="unknown",
-                description=f"Lỗi khi đánh giá: {str(e)}",
-                root_cause="Không xác định",
-                solution="Không có đề xuất",
+                description=f"Error during evaluation: {str(e)}",
+                root_cause="Unknown",
+                solution="No recommendation",
                 confidence_score=0.0
             )
             
@@ -287,47 +287,47 @@ Yêu cầu quan trọng:
                 judge_id="oracle-judge",
                 scores=[0.0] * len(proposals),
                 best_proposal=0,
-                reasoning=f"Lỗi khi đánh giá: {str(e)}",
+                reasoning=f"Error during evaluation: {str(e)}",
                 final_report=default_report
             )
     
     def _evaluate_with_deepeval(self, incident_logs: str, proposals: List[Proposal]) -> Dict[str, Any]:
         """
-        Đánh giá các proposal với DeepEval framework
+        Evaluate proposals with the DeepEval framework
         
         Args:
-            incident_logs (str): Log sự cố gốc
-            proposals (List[Proposal]): Danh sách các proposal cần đánh giá
+            incident_logs (str): Original incident logs
+            proposals (List[Proposal]): List of proposals to evaluate
             
         Returns:
-            Dict[str, Any]: Kết quả đánh giá từ DeepEval
+            Dict[str, Any]: DeepEval evaluation results
         """
         if not DEEPEVAL_AVAILABLE:
-            logger.warning("DeepEval không khả dụng, bỏ qua đánh giá DeepEval")
+            logger.warning("DeepEval is not available, skipping DeepEval evaluation")
             return {}
         
         try:
-            logger.info("Đang đánh giá với DeepEval framework...")
+            logger.info("Evaluating with DeepEval framework...")
             
-            # Tạo metrics
+            # Create metrics
             metrics = [
                 AnswerRelevancyMetric(threshold=0.7),
                 FaithfulnessMetric(threshold=0.7),
                 ContextualPrecisionMetric(threshold=0.7)
             ]
             
-            # Chuẩn bị dữ liệu cho DeepEval
+            # Prepare data for DeepEval
             evaluation_results = {}
             for i, proposal in enumerate(proposals):
-                # Tạo test case cho mỗi proposal
+                # Create test case for each proposal
                 test_case = {
                     "input": incident_logs,
                     "actual_output": proposal.report.solution,
                     "retrieval_context": [proposal.report.root_cause],
-                    "expected_output": "Giải pháp chính xác và khả thi cho sự cố"
+                    "expected_output": "Accurate and feasible solution for the incident"
                 }
                 
-                # Đánh giá với từng metric
+                # Evaluate with each metric
                 metric_scores = {}
                 for metric in metrics:
                     try:
@@ -338,7 +338,7 @@ Yêu cầu quan trọng:
                             "reason": result.reason if hasattr(result, 'reason') else ""
                         }
                     except Exception as e:
-                        logger.error(f"Lỗi khi đánh giá với {metric.__class__.__name__}: {str(e)}")
+                        logger.error(f"Error evaluating with {metric.__class__.__name__}: {str(e)}")
                         metric_scores[metric.__class__.__name__] = {
                             "score": 0.0,
                             "passed": False,
@@ -347,114 +347,114 @@ Yêu cầu quan trọng:
                 
                 evaluation_results[f"proposal_{i}"] = metric_scores
             
-            logger.info(f"Đã hoàn thành đánh giá DeepEval cho {len(proposals)} proposals")
+            logger.info(f"Completed DeepEval evaluation for {len(proposals)} proposals")
             return evaluation_results
             
         except Exception as e:
-            logger.error(f"Lỗi khi đánh giá với DeepEval: {str(e)}")
+            logger.error(f"Error evaluating with DeepEval: {str(e)}")
             return {}
     
     def _evaluate_with_ragas(self, incident_logs: str, proposals: List[Proposal]) -> Dict[str, Any]:
         """
-        Đánh giá các proposal với Ragas framework
+        Evaluate proposals with the Ragas framework
         
         Args:
-            incident_logs (str): Log sự cố gốc
-            proposals (List[Proposal]): Danh sách các proposal cần đánh giá
+            incident_logs (str): Original incident logs
+            proposals (List[Proposal]): List of proposals to evaluate
             
         Returns:
-            Dict[str, Any]: Kết quả đánh giá từ Ragas
+            Dict[str, Any]: Ragas evaluation results
         """
         if not RAGAS_AVAILABLE:
-            logger.warning("Ragas không khả dụng, bỏ qua đánh giá Ragas")
+            logger.warning("Ragas is not available, skipping Ragas evaluation")
             return {}
         
         try:
-            logger.info("Đang đánh giá với Ragas framework...")
+            logger.info("Evaluating with Ragas framework...")
             
-            # Chuẩn bị dữ liệu cho Ragas
+            # Prepare data for Ragas
             dataset = []
             for proposal in proposals:
                 dataset.append({
                     "question": incident_logs,
                     "answer": proposal.report.solution,
                     "contexts": [proposal.report.root_cause, proposal.report.description],
-                    "ground_truth": "Giải pháp chính xác và khả thi"
+                    "ground_truth": "Accurate and feasible solution"
                 })
             
-            # Đánh giá với các metrics
+            # Evaluate with metrics
             metrics = [faithfulness, answer_relevancy, context_precision]
             
-            # Chuyển đổi dataset sang format phù hợp cho Ragas
+            # Convert dataset to Ragas-compatible format
             from datasets import Dataset
             eval_dataset = Dataset.from_list(dataset)
             
-            # Chạy đánh giá
+            # Run evaluation
             result = ragas_evaluate(
                 dataset=eval_dataset,
                 metrics=metrics
             )
             
-            # Lấy kết quả
+            # Get results
             evaluation_results = result.to_pandas().to_dict('records')
             
-            logger.info(f"Đã hoàn thành đánh giá Ragas cho {len(proposals)} proposals")
+            logger.info(f"Completed Ragas evaluation for {len(proposals)} proposals")
             return {"ragas_results": evaluation_results}
             
         except Exception as e:
-            logger.error(f"Lỗi khi đánh giá với Ragas: {str(e)}")
+            logger.error(f"Error evaluating with Ragas: {str(e)}")
             return {}
     
     def _evaluate_with_prometheus(self, incident_logs: str, proposals: List[Proposal]) -> Dict[str, Any]:
         """
-        Đánh giá các proposal với Prometheus-eval framework
+        Evaluate proposals with the Prometheus-eval framework
         
         Args:
-            incident_logs (str): Log sự cố gốc
-            proposals (List[Proposal]): Danh sách các proposal cần đánh giá
+            incident_logs (str): Original incident logs
+            proposals (List[Proposal]): List of proposals to evaluate
             
         Returns:
-            Dict[str, Any]: Kết quả đánh giá từ Prometheus-eval
+            Dict[str, Any]: Prometheus-eval evaluation results
         """
         if not PROMETHEUS_EVAL_AVAILABLE:
-            logger.warning("Prometheus-eval không khả dụng, bỏ qua đánh giá Prometheus")
+            logger.warning("Prometheus-eval is not available, skipping Prometheus evaluation")
             return {}
         
         try:
-            logger.info("Đang đánh giá với Prometheus-eval framework...")
+            logger.info("Evaluating with Prometheus-eval framework...")
             
-            # Khởi tạo Prometheus evaluator
+            # Initialize Prometheus evaluator
             evaluator = PrometheusEval(model=self.model)
             
-            # Tạo custom rubric cho đánh giá RCA
+            # Create custom rubric for RCA evaluation
             rubric = """
-            Đánh giá báo cáo phân tích sự cố dựa trên các tiêu chí sau:
-            1. Tính chính xác của nguyên nhân gốc rễ (0-30 điểm)
-            2. Tính khả thi của giải pháp (0-30 điểm)
-            3. Mức độ chi tiết và toàn diện (0-20 điểm)
-            4. Điểm tin cậy được cung cấp (0-20 điểm)
+            Evaluate the incident analysis report based on the following criteria:
+            1. Root cause accuracy (0-30 points)
+            2. Solution feasibility (0-30 points)
+            3. Level of detail and comprehensiveness (0-20 points)
+            4. Confidence score provided (0-20 points)
             
-            Tổng điểm: 0-100
+            Total score: 0-100
             """
             
-            # Đánh giá từng proposal
+            # Evaluate each proposal
             evaluation_results = {}
             for i, proposal in enumerate(proposals):
                 try:
-                    # Tạo prompt cho đánh giá
+                    # Create evaluation prompt
                     eval_prompt = f"""
-                    Log sự cố:
+                    Incident logs:
                     {incident_logs}
                     
-                    Báo cáo phân tích:
-                    Nguyên nhân gốc rễ: {proposal.report.root_cause}
-                    Giải pháp: {proposal.report.solution}
-                    Điểm tin cậy: {proposal.report.confidence_score}
+                    Analysis report:
+                    Root cause: {proposal.report.root_cause}
+                    Solution: {proposal.report.solution}
+                    Confidence score: {proposal.report.confidence_score}
                     
                     {rubric}
                     """
                     
-                    # Chạy đánh giá
+                    # Run evaluation
                     result = evaluator.evaluate(eval_prompt)
                     
                     evaluation_results[f"proposal_{i}"] = {
@@ -464,49 +464,49 @@ Yêu cầu quan trọng:
                     }
                     
                 except Exception as e:
-                    logger.error(f"Lỗi khi đánh giá proposal {i} với Prometheus: {str(e)}")
+                    logger.error(f"Error evaluating proposal {i} with Prometheus: {str(e)}")
                     evaluation_results[f"proposal_{i}"] = {
                         "score": 0,
                         "feedback": str(e),
                         "reasoning": ""
                     }
             
-            logger.info(f"Đã hoàn thành đánh giá Prometheus cho {len(proposals)} proposals")
+            logger.info(f"Completed Prometheus evaluation for {len(proposals)} proposals")
             return evaluation_results
             
         except Exception as e:
-            logger.error(f"Lỗi khi đánh giá với Prometheus-eval: {str(e)}")
+            logger.error(f"Error evaluating with Prometheus-eval: {str(e)}")
             return {}
     
     def _reference_guided_evaluation(self, incident_logs: str, proposals: List[Proposal], 
                                      reference_solution: Optional[str] = None) -> Dict[str, Any]:
         """
-        Đánh giá dựa trên reference solution (runbook)
+        Evaluate based on a reference solution (runbook)
         
         Args:
-            incident_logs (str): Log sự cố gốc
-            proposals (List[Proposal]): Danh sách các proposal cần đánh giá
-            reference_solution (Optional[str]): Giải pháp tham chiếu (runbook)
+            incident_logs (str): Original incident logs
+            proposals (List[Proposal]): List of proposals to evaluate
+            reference_solution (Optional[str]): Reference solution (runbook)
             
         Returns:
-            Dict[str, Any]: Kết quả đánh giá reference-guided
+            Dict[str, Any]: Reference-guided evaluation results
         """
         if reference_solution is None:
-            logger.info("Không có reference solution, bỏ qua reference-guided evaluation")
+            logger.info("No reference solution provided, skipping reference-guided evaluation")
             return {}
         
         try:
-            logger.info("Đang thực hiện reference-guided evaluation...")
+            logger.info("Performing reference-guided evaluation...")
             
             evaluation_results = {}
             for i, proposal in enumerate(proposals):
-                # So sánh với reference solution
+                # Compare with reference solution
                 similarity_score = self._calculate_similarity(
                     proposal.report.solution, 
                     reference_solution
                 )
                 
-                # Đánh giá độ chính xác
+                # Assess accuracy
                 accuracy_score = self._calculate_accuracy(
                     proposal.report.root_cause,
                     reference_solution
@@ -518,26 +518,26 @@ Yêu cầu quan trọng:
                     "combined_score": (similarity_score + accuracy_score) / 2
                 }
             
-            logger.info(f"Đã hoàn thành reference-guided evaluation cho {len(proposals)} proposals")
+            logger.info(f"Completed reference-guided evaluation for {len(proposals)} proposals")
             return evaluation_results
             
         except Exception as e:
-            logger.error(f"Lỗi khi thực hiện reference-guided evaluation: {str(e)}")
+            logger.error(f"Error performing reference-guided evaluation: {str(e)}")
             return {}
     
     def _calculate_similarity(self, text1: str, text2: str) -> float:
         """
-        Tính độ tương đồng giữa hai văn bản
+        Calculate similarity between two texts
         
         Args:
-            text1 (str): Văn bản thứ nhất
-            text2 (str): Văn bản thứ hai
+            text1 (str): First text
+            text2 (str): Second text
             
         Returns:
-            float: Điểm tương đồng (0-1)
+            float: Similarity score (0-1)
         """
         try:
-            # Sử dụng simple word overlap cho nhanh
+            # Use simple word overlap for speed
             words1 = set(text1.lower().split())
             words2 = set(text2.lower().split())
             
@@ -550,45 +550,45 @@ Yêu cầu quan trọng:
             return len(intersection) / len(union)
             
         except Exception as e:
-            logger.error(f"Lỗi khi tính similarity: {str(e)}")
+            logger.error(f"Error calculating similarity: {str(e)}")
             return 0.0
     
     def _calculate_accuracy(self, root_cause: str, reference: str) -> float:
         """
-        Tính độ chính xác của root cause so với reference
+        Calculate accuracy of root cause compared to reference
         
         Args:
-            root_cause (str): Nguyên nhân gốc rễ được đề xuất
+            root_cause (str): Proposed root cause
             reference (str): Reference solution
             
         Returns:
-            float: Điểm chính xác (0-1)
+            float: Accuracy score (0-1)
         """
         try:
-            # Sử dụng similarity score như một proxy cho accuracy
+            # Use similarity score as a proxy for accuracy
             return self._calculate_similarity(root_cause, reference)
             
         except Exception as e:
-            logger.error(f"Lỗi khi tính accuracy: {str(e)}")
+            logger.error(f"Error calculating accuracy: {str(e)}")
             return 0.0
     
     def _continuous_evaluation(self, evaluation_history: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
-        Đánh giá liên tục và theo dõi cải thiện
+        Continuous evaluation and improvement tracking
         
         Args:
-            evaluation_history (List[Dict[str, Any]]): Lịch sử đánh giá
+            evaluation_history (List[Dict[str, Any]]): Evaluation history
             
         Returns:
-            Dict[str, Any]: Báo cáo xu hướng và cải thiện
+            Dict[str, Any]: Trend and improvement report
         """
         try:
-            logger.info("Đang phân tích xu hướng đánh giá...")
+            logger.info("Analyzing evaluation trends...")
             
             if not evaluation_history:
                 return {"trend": "no_data", "improvement": 0.0}
             
-            # Tính toán xu hướng
+            # Calculate trends
             recent_scores = [eval.get("avg_score", 0) for eval in evaluation_history[-10:]]
             older_scores = [eval.get("avg_score", 0) for eval in evaluation_history[:-10]]
             
@@ -611,39 +611,39 @@ Yêu cầu quan trọng:
             }
             
         except Exception as e:
-            logger.error(f"Lỗi khi phân tích xu hướng đánh giá: {str(e)}")
+            logger.error(f"Error analyzing evaluation trends: {str(e)}")
             return {"trend": "error", "improvement": 0.0}
     
     async def evaluate_with_all_frameworks(self, incident_logs: str, proposals: List[Proposal],
                                           reference_solution: Optional[str] = None,
                                           evaluation_history: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
         """
-        Chạy tất cả evaluation frameworks và tổng hợp kết quả
+        Run all evaluation frameworks and aggregate results
         
         Args:
-            incident_logs (str): Log sự cố gốc
-            proposals (List[Proposal]): Danh sách các proposal cần đánh giá
-            reference_solution (Optional[str]): Giải pháp tham chiếu
-            evaluation_history (Optional[List[Dict[str, Any]]]): Lịch sử đánh giá
+            incident_logs (str): Original incident logs
+            proposals (List[Proposal]): List of proposals to evaluate
+            reference_solution (Optional[str]): Reference solution
+            evaluation_history (Optional[List[Dict[str, Any]]]): Evaluation history
             
         Returns:
-            Dict[str, Any]: Kết quả tổng hợp từ tất cả frameworks
+            Dict[str, Any]: Aggregated results from all frameworks
         """
         try:
-            logger.info("Bắt đầu đánh giá với tất cả frameworks...")
+            logger.info("Starting evaluation with all frameworks...")
             
-            # Chạy đánh giá với từng framework
+            # Run evaluation with each framework
             deepeval_results = self._evaluate_with_deepeval(incident_logs, proposals)
             ragas_results = self._evaluate_with_ragas(incident_logs, proposals)
             prometheus_results = self._evaluate_with_prometheus(incident_logs, proposals)
             reference_results = self._reference_guided_evaluation(incident_logs, proposals, reference_solution)
             
-            # Phân tích xu hướng nếu có lịch sử
+            # Analyze trends if history is available
             trend_analysis = {}
             if evaluation_history:
                 trend_analysis = self._continuous_evaluation(evaluation_history)
             
-            # Tổng hợp kết quả
+            # Aggregate results
             aggregated_results = {
                 "deepeval": deepeval_results,
                 "ragas": ragas_results,
@@ -654,27 +654,27 @@ Yêu cầu quan trọng:
                 "num_proposals": len(proposals)
             }
             
-            # Tính điểm tổng hợp cho mỗi proposal
+            # Calculate aggregated scores for each proposal
             aggregated_scores = self._aggregate_scores(aggregated_results, len(proposals))
             aggregated_results["aggregated_scores"] = aggregated_scores
             
-            logger.info("Đã hoàn thành đánh giá với tất cả frameworks")
+            logger.info("Completed evaluation with all frameworks")
             return aggregated_results
             
         except Exception as e:
-            logger.error(f"Lỗi khi đánh giá với tất cả frameworks: {str(e)}")
+            logger.error(f"Error evaluating with all frameworks: {str(e)}")
             return {"error": str(e)}
     
     def _aggregate_scores(self, results: Dict[str, Any], num_proposals: int) -> List[float]:
         """
-        Tổng hợp điểm số từ tất cả frameworks
+        Aggregate scores from all frameworks
         
         Args:
-            results (Dict[str, Any]): Kết quả từ tất cả frameworks
-            num_proposals (int): Số lượng proposals
+            results (Dict[str, Any]): Results from all frameworks
+            num_proposals (int): Number of proposals
             
         Returns:
-            List[float]: Điểm tổng hợp cho mỗi proposal
+            List[float]: Aggregated score for each proposal
         """
         try:
             aggregated_scores = []
@@ -682,7 +682,7 @@ Yêu cầu quan trọng:
             for i in range(num_proposals):
                 scores = []
                 
-                # Lấy điểm từ DeepEval
+                # Get DeepEval scores
                 if "deepeval" in results and f"proposal_{i}" in results["deepeval"]:
                     deepeval_scores = results["deepeval"][f"proposal_{i}"]
                     avg_deepeval = sum(
@@ -690,22 +690,22 @@ Yêu cầu quan trọng:
                     ) / len(deepeval_scores) if deepeval_scores else 0
                     scores.append(avg_deepeval)
                 
-                # Lấy điểm từ Prometheus
+                # Get Prometheus scores
                 if "prometheus" in results and f"proposal_{i}" in results["prometheus"]:
                     prometheus_score = results["prometheus"][f"proposal_{i}"].get("score", 0) / 100
                     scores.append(prometheus_score)
                 
-                # Lấy điểm từ Reference-guided
+                # Get Reference-guided scores
                 if "reference_guided" in results and f"proposal_{i}" in results["reference_guided"]:
                     ref_score = results["reference_guided"][f"proposal_{i}"].get("combined_score", 0)
                     scores.append(ref_score)
                 
-                # Tính điểm trung bình
+                # Calculate average score
                 avg_score = sum(scores) / len(scores) if scores else 0.0
                 aggregated_scores.append(avg_score)
             
             return aggregated_scores
             
         except Exception as e:
-            logger.error(f"Lỗi khi tổng hợp điểm số: {str(e)}")
+            logger.error(f"Error aggregating scores: {str(e)}")
             return [0.0] * num_proposals

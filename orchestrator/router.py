@@ -3,22 +3,22 @@ from orchestrator.state import AIOpsState
 
 def route_incident_analysis(state: AIOpsState) -> Literal["proposers", "judge", "executor", "__end__"]:
     """
-    Router chính để điều hướng quy trình xử lý sự cố
+    Main router to direct the incident processing workflow
     
-    Logic routing:
-    1. Nếu không có incident_logs -> END
-    2. Nếu có proposals nhưng chưa có evaluations -> judge
-    3. Nếu có evaluations và final_report hợp lệ -> executor
-    4. Nếu đã có executed_actions -> END
-    5. Mặc định -> proposers
+    Routing logic:
+    1. If no incident_logs -> END
+    2. If proposals exist but no evaluations -> judge
+    3. If evaluations exist and final_report is valid -> executor
+    4. If actions already executed -> END
+    5. Default -> proposers
     
     Args:
-        state (AIOpsState): Trạng thái hiện tại của hệ thống
+        state (AIOpsState): Current system state
         
     Returns:
-        Literal["proposers", "judge", "executor", "__end__"]: Node tiếp theo để thực thi
+        Literal["proposers", "judge", "executor", "__end__"]: Next node to execute
     """
-    # Graceful degradation: Nếu không có log sự cố, kết thúc
+    # Graceful degradation: If no incident logs, end
     incident_logs = state.get("incident_logs", "")
     if not incident_logs or not incident_logs.strip():
         return "__end__"
@@ -28,37 +28,37 @@ def route_incident_analysis(state: AIOpsState) -> Literal["proposers", "judge", 
     final_report = state.get("final_report")
     executed_actions = state.get("executed_actions", [])
     
-    # Nếu đã có đề xuất từ proposers nhưng chưa có đánh giá từ judge
+    # If proposals exist from proposers but no evaluations from judge
     if proposals and not evaluations:
         return "judge"
     
-    # Nếu đã có đánh giá từ judge và có final_report hợp lệ, chuyển sang executor
+    # If evaluations exist from judge and final_report is valid, move to executor
     if evaluations and final_report:
-        # Kiểm tra xem final_report có dữ liệu hợp lệ không
+        # Check if final_report has valid data
         if (final_report.incident_id and 
             final_report.root_cause and 
             final_report.solution):
             return "executor"
     
-    # Nếu đã thực thi hành động, kết thúc
+    # If actions have already been executed, end
     if executed_actions:
         return "__end__"
     
-    # Mặc định bắt đầu với proposers
+    # Default: start with proposers
     return "proposers"
 
 
 def route_after_evaluation(state: AIOpsState) -> Literal["executor", "__end__"]:
     """
-    Router sau khi evaluate_proposals để quyết định có chạy executor không
+    Router after evaluate_proposals to decide whether to run the executor
     
     Args:
-        state (AIOpsState): Trạng thái hiện tại của hệ thống
+        state (AIOpsState): Current system state
         
     Returns:
-        Literal["executor", "__end__"]: Node tiếp theo để thực thi
+        Literal["executor", "__end__"]: Next node to execute
     """
-    # Chỉ chạy executor nếu final_report có dữ liệu hợp lệ
+    # Only run executor if final_report has valid data
     final_report = state.get("final_report")
     if final_report:
         if (final_report.incident_id and 
@@ -66,5 +66,5 @@ def route_after_evaluation(state: AIOpsState) -> Literal["executor", "__end__"]:
             final_report.solution):
             return "executor"
     
-    # Ngược lại, kết thúc
+    # Otherwise, end
     return "__end__"
