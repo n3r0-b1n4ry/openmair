@@ -48,7 +48,7 @@ class Config:
     GEMINI_PRO_MODEL: str = os.getenv("GEMINI_PRO_MODEL", "gemini-3.1-pro")
     
     # LLM_API_BASEURL configuration
-    LLM_API_BASEURL: str = os.getenv("LLM_API_BASEURL", "https://mkp-api.fptcloud.com/v1")
+    LLM_API_BASEURL: str = os.getenv("LLM_API_BASEURL", "")
     LLM_API_KEY: str = os.getenv("LLM_API_KEY", "")
 
     # Proposer Models (Candidate LLMs) - State-of-the-art open-source models

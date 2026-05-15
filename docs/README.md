@@ -8,9 +8,9 @@ This system is an advanced AIOps (AI for IT Operations) solution using a Mixture
 
 The system consists of three main types of agents:
 
-1. **Proposers (Candidate Agents)**: State-of-the-art open-source LLMs (Qwen 3.5 27B, Llama 4 17B, Devstral Small 2 24B, Gemma 4 27B) running locally via vLLM, responsible for analyzing incident logs and generating independent RCA reports.
+1. **Proposers (Candidate Agents)**: State-of-the-art open-source LLMs (Qwen 3.6 27B, GPT OSS 20B, SaoLa4-medium, Gemma 4 26B A4B IT, Qwen3-32B) running locally via vLLM, responsible for analyzing incident logs and generating independent RCA reports.
 
-2. **Judge (Evaluator Agent)**: A premium LLM (Claude Opus 4.7 - default, OpenAI o3-mini - fallback for extremely difficult code/log logic, GPT-4o) acting as a judge, evaluating and synthesizing reports from Proposers to make the final decision.
+2. **Judge (Evaluator Agent)**: A premium LLM (GPT-5.5 - default, GPT-5.4-mini - fallback, Gemini 3.1 Pro) acting as a judge, evaluating and synthesizing reports from Proposers to make the final decision.
 
 3. **Executor (Execution Agent)**: Performs incident remediation actions based on the Judge's decision.
 
@@ -78,7 +78,7 @@ The entire workflow is orchestrated by LangGraph, maintaining a global state sha
      docker-compose -f docker-compose.light.yml up -d
      ```
    
-   **Note:** The `docker-compose.light.yml` profile only runs 1 vLLM container (Qwen 2.5 72B or Llama 3.3 70B) and Redis, suitable for personal machines or labs with a single GPU. To switch to Llama 3.3, modify the `model_id` in the `docker-compose.light.yml` file.
+   **Note:** The `docker-compose.light.yml` profile only runs 1 vLLM container (e.g., Qwen 3.6 27B) and Redis, suitable for personal machines or labs with a single GPU. To switch models, modify the `model_id` in the `docker-compose.light.yml` file.
 
 ## Usage
 
@@ -130,17 +130,14 @@ Configuration parameters can be modified in the `config.py` file.
 - `LANGCHAIN_PROJECT`: Project name in LangSmith
 
 ### vLLM Endpoints (2026)
-- `VLLM_QWEN_URL`: URL for the vLLM Qwen 2.5 72B service (default: http://localhost:8000)
-- `VLLM_LLAMA33_URL`: URL for the vLLM Llama 3.3 70B service (default: http://localhost:8001)
-- `VLLM_QWQ_URL`: URL for the vLLM QwQ-32B service (default: http://localhost:8002)
-- `VLLM_DEEPSEEK_URL`: URL for the vLLM DeepSeek V3 service (default: http://localhost:8003)
-- `VLLM_R1_DISTILL_URL`: URL for the vLLM DeepSeek R1 Distill Llama 70B service (default: http://localhost:8004)
+- `LLM_API_BASEURL`: Base URL for the vLLM gateway or services.
+- `LLM_API_KEY`: API key for accessing the local models.
 
 ### Model Selection (2026)
-- `JUDGE_MODEL`: Model for the Judge Agent (default: claude-3-7-sonnet - best hybrid reasoning)
-- `JUDGE_ALTERNATIVE`: Alternative model for the Judge (default: o3-mini - for extremely difficult code/log logic)
+- `JUDGE_MODEL`: Model for the Judge Agent (default: gpt-5.5)
+- `JUDGE_ALTERNATIVE`: Alternative model for the Judge (default: gpt-5.4-mini)
+- `GEMINI_PRO_MODEL`: Gemini model for the Judge (default: gemini-3.1-pro)
 - `EXECUTOR_MODEL`: Model for the Executor Agent (default: gpt-4o-mini)
-- `O3_REASONING_EFFORT`: Reasoning effort configuration for o3-mini (low, medium, high - default: medium)
 
 ### Logging & Optimization
 - `LOG_LEVEL`: Logging level (DEBUG, INFO, WARNING, ERROR)

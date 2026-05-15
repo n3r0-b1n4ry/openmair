@@ -17,16 +17,16 @@ graph TB
     end
 
     subgraph Proposers["Proposer Agents (Candidate LLMs via vLLM)"]
-        P1["Qwen 3.5 27B"]
-        P2["Llama 4 17B"]
-        P3["Devstral Small 2 24B"]
-        P4["Gemma 4 27B"]
-        P5["DeepSeek R1 Distill 70B"]
+        P1["Qwen 3.6 27B"]
+        P2["GPT OSS 20B"]
+        P3["SaoLa4-medium"]
+        P4["Gemma 4 26B A4B IT"]
+        P5["Qwen3-32B"]
     end
 
     subgraph Judge["Judge Agent (Oracle LLM)"]
-        J1["Claude Opus 4.7<br/>(default)"]
-        J2["GPT-4o<br/>(fallback)"]
+        J1["GPT-5.5<br/>(default)"]
+        J2["GPT-5.4-mini<br/>(fallback)"]
         J3["Gemini 3.1 Pro<br/>(alternative)"]
     end
 
@@ -57,8 +57,8 @@ graph TB
 
 | Component | Description | Models |
 |-----------|-------------|--------|
-| **Proposers** | 5 open-source LLMs deployed locally via vLLM. They run in parallel to maximize diversity of analysis perspectives. | Qwen 3.5 27B, Llama 4 17B, Devstral Small 2 24B, Gemma 4 27B, DeepSeek R1 Distill 70B |
-| **Judge** | A single premium LLM that acts as an oracle. It does not analyze from scratch — instead it evaluates, compares, and synthesizes the Proposers' outputs. | Claude Opus 4.7 (default), GPT-4o (fallback), Gemini 3.1 Pro (alternative) |
+| **Proposers** | 5 open-source LLMs deployed locally via vLLM. They run in parallel to maximize diversity of analysis perspectives. | Qwen 3.6 27B, GPT OSS 20B, SaoLa4-medium, Gemma 4 26B A4B IT, Qwen3-32B |
+| **Judge** | A single premium LLM that acts as an oracle. It does not analyze from scratch — instead it evaluates, compares, and synthesizes the Proposers' outputs. | GPT-5.5 (default), GPT-5.4-mini (fallback), Gemini 3.1 Pro (alternative) |
 | **Executor** | A lightweight model that translates the Judge's final report into concrete remediation actions (e.g., API calls, scripts, restarts). | GPT-4o Mini |
 | **Orchestrator** | LangGraph-based state machine that maintains a shared `AIOpsState` and routes data between agents using conditional edges. | — |
 
@@ -140,12 +140,12 @@ The Judge applies several **anti-bias techniques** before evaluation:
 sequenceDiagram
     participant User as User/System
     participant Orch as LangGraph Orchestrator
-    participant P1 as Qwen 3.5 27B
-    participant P2 as Llama 4 17B
-    participant P3 as Devstral Small 2 24B
-    participant P4 as Gemma 4 27B
-    participant P5 as DeepSeek R1 Distill
-    participant Judge as Judge (Claude Opus 4.7)
+    participant P1 as Qwen 3.6 27B
+    participant P2 as GPT OSS 20B
+    participant P3 as SaoLa4-medium
+    participant P4 as Gemma 4 26B A4B IT
+    participant P5 as Qwen3-32B
+    participant Judge as Judge (GPT-5.5)
     participant Exec as Executor (GPT-4o Mini)
 
     User->>Orch: Submit incident logs
@@ -246,11 +246,11 @@ graph LR
 
 | Service | Port | Purpose |
 |---------|------|---------|
-| vllm-qwen35 | 8000 | Qwen 3.5 27B inference (OpenAI-compatible API) |
-| vllm-llama4 | 8001 | Llama 4 17B inference |
-| vllm-devstral | 8002 | Devstral Small 2 24B inference |
-| vllm-gemma4 | 8003 | Gemma 4 27B inference |
-| vllm-r1-distill | 8004 | DeepSeek R1 Distill Llama 70B inference |
+| vllm-qwen36 | 8000 | Qwen 3.6 27B inference (OpenAI-compatible API) |
+| vllm-gptoss | 8001 | GPT OSS 20B inference |
+| vllm-saola4 | 8002 | SaoLa4-medium inference |
+| vllm-gemma4 | 8003 | Gemma 4 26B A4B IT inference |
+| vllm-qwen3-32b | 8004 | Qwen3-32B inference |
 | Nginx | 8080 | Load balancer for vLLM containers |
 | Redis | 6379 | Response caching and API rate limiting |
 | Elasticsearch | 9200 | Centralized log storage and search |

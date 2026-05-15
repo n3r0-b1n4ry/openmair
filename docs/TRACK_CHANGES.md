@@ -2,6 +2,12 @@
 
 ---
 
+## [2026-05-15] Documentation Update for Latest Models & Infrastructure
+- Synchronized all documentation to match `config.py` model variables (Qwen 3.6 27B, GPT OSS 20B, SaoLa4-medium, Gemma 4 26B A4B IT, Qwen3-32B, GPT-5.5, GPT-5.4-mini).
+- Updated Elasticsearch logging pipeline documentation to reflect changes in benchmark ingestion.
+
+---
+
 ## [2026-03-19] Full Repo Review & Bug Fixes
 
 ### 🔴 Critical Fixes (5)

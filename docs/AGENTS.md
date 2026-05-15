@@ -6,8 +6,8 @@ This project builds an Automated Incident Response system (AIOps). The system in
 
 ## 2. Agent Architecture
 
-* **Candidate Proposers:** State-of-the-art open-source LLMs (Qwen 3.5 27B, Llama 4 17B, Devstral Small 2 24B, Gemma 4 27B) deployed locally via vLLM. These agents operate in parallel to analyze logs and generate multiple independent RCA reports.
-* **Oracle Aggregator:** A premium model (GPT-4o, Claude Opus 4.7, or Gemini 3.1 Pro). Its task is not to analyze from scratch, but to synthesize, compare, and evaluate the Proposers' reports, thereby filtering out hallucinations and producing the optimal remediation action.
+* **Candidate Proposers:** State-of-the-art open-source LLMs (Qwen 3.6 27B, GPT OSS 20B, SaoLa4-medium, Gemma 4 26B A4B IT, Qwen3-32B) deployed locally via vLLM. These agents operate in parallel to analyze logs and generate multiple independent RCA reports.
+* **Oracle Aggregator:** A premium model (GPT-5.5, GPT-5.4-mini, or Gemini 3.1 Pro). Its task is not to analyze from scratch, but to synthesize, compare, and evaluate the Proposers' reports, thereby filtering out hallucinations and producing the optimal remediation action.
 * **Orchestrator:** The entire workflow is managed by LangGraph, maintaining a global State shared across all agents.
 
 ## 3. Source Code Structure (Monorepo)
@@ -21,16 +21,16 @@ This project builds an Automated Incident Response system (AIOps). The system in
 ## 4. LLM Models Used
 
 ### Proposer Models (Candidate LLMs)
-1. **Qwen 3.5 27B** - Currently the most powerful open-source model
-2. **Llama 4 17B** - The most popular open-source model (upgraded from Llama 3.1)
-3. **Devstral Small 2 24B** - Chain-of-thought reasoning model (replacing Mistral Large 2)
-4. **Gemma 4 27B** - The latest open-source model
-5. **DeepSeek R1 Distill Llama 70B** - Powerful reasoning model
+1. **Qwen 3.6 27B**
+2. **GPT OSS 20B**
+3. **SaoLa4-medium**
+4. **Gemma 4 26B A4B IT**
+5. **Qwen3-32B**
 
 ### Judge Model (Oracle LLM)
-1. **GPT-4o** - The most powerful model from OpenAI
-2. **Claude Opus 4.7** - The best model for reasoning
-3. **Gemini 3.1 Pro** - The latest model from Google
+1. **GPT-5.5** - Default Oracle Judge
+2. **GPT-5.4-mini** - Fallback Judge
+3. **Gemini 3.1 Pro** - Alternative Judge
 
 See `MODELS.md` for more details.
 
