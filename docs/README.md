@@ -87,6 +87,34 @@ Run the system:
 python main.py
 ```
 
+## Benchmarking and Evaluation
+
+The system comes with 10 built-in incident scenarios to evaluate the multi-agent problem-solving and root cause analysis capabilities:
+
+1. **DDoS Attack**: High volume of requests causing API Gateway rate limiting.
+2. **Brute Force Login**: Multiple failed authentication attempts and Account Lockout.
+3. **DB Connection Pool Exhaustion**: Services failing to acquire DB connections.
+4. **Out of Memory Crash**: Memory leak leading to pod termination by OS OOM killer.
+5. **Disk Full**: "No space left on device" errors causing app crashes.
+6. **DNS Resolution Failure**: Internal service unable to resolve hostname.
+7. **Third-Party API Outage**: Payment provider returning 503 or timing out.
+8. **Bad Config Deployment**: Invalid credentials deployed causing authentication errors.
+9. **Message Queue Backup**: Kafka/RabbitMQ consumer lag spiking.
+10. **Database Deadlock**: Concurrent transactions causing deadlocks.
+
+To run the benchmarking script:
+
+```bash
+# Run a specific scenario by name or ID
+python benchmark.py --scenario ddos
+
+# Run all 10 scenarios sequentially
+python benchmark.py --all
+
+# List all available scenarios
+python benchmark.py --list
+```
+
 ## Configuration
 
 Configuration parameters can be modified in the `config.py` file.

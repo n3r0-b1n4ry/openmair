@@ -73,12 +73,13 @@ class JudgeAgent:
             )
             logger.info(f"Initialized Judge Agent with Gemini model: {model_name}")
         else:
-            # Default to GPT-4o
+            # Use OpenAI directly for Judge
             self.model = ChatOpenAI(
                 model=model_name,
                 temperature=temperature,
                 max_tokens=8192,
-                timeout=120
+                timeout=120,
+                api_key=config.OPENAI_API_KEY
             )
             logger.info(f"Initialized Judge Agent with OpenAI model: {model_name}")
         

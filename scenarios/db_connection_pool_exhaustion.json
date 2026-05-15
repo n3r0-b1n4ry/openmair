@@ -1,0 +1,6 @@
+{
+    "id": "scenario-003",
+    "name": "DB Connection Pool Exhaustion",
+    "description": "Services failing to acquire DB connections, leading to timeouts.",
+    "logs": "2026-05-15 11:30:12 INFO  [InventoryService] - Processing bulk inventory update\n2026-05-15 11:30:45 WARN  [InventoryService] - Database connection acquisition took longer than 5000ms\n2026-05-15 11:31:02 ERROR [InventoryService] - HikariPool-1 - Connection is not available, request timed out after 30005ms.\n2026-05-15 11:31:05 ERROR [OrderService] - Cannot reserve inventory. Dependency InventoryService returned 500 Internal Server Error.\n2026-05-15 11:31:10 FATAL [InventoryService] - System out of database connections. Current pool size: 50, Active: 50, Idle: 0, Waiting: 120."
+}

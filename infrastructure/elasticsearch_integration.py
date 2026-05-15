@@ -79,22 +79,21 @@ class ElasticsearchClient:
         url = f"{scheme}://{host}:{port}"
         
         # Tạo client
+        headers = {"Accept": "application/vnd.elasticsearch+json; compatible-with=8", "Content-Type": "application/vnd.elasticsearch+json; compatible-with=8"}
+        
         if username and password:
             self.client = Elasticsearch(
                 url,
                 basic_auth=(username, password),
                 verify_certs=False,
-                ssl_show_warn=False
+                ssl_show_warn=False,
+                headers=headers
             )
         else:
-            self.client = Elasticsearch(url)
+            self.client = Elasticsearch(url, headers=headers)
         
-        # Kiểm tra connection
-        if self.client.ping():
-            logger.info(f"Đã kết nối thành công tới Elasticsearch tại {url}")
-        else:
-            logger.error(f"Không thể kết nối tới Elasticsearch tại {url}")
-            raise ConnectionError(f"Không thể kết nối tới Elasticsearch tại {url}")
+        # Kiểm tra connection bị bỏ qua vì HEAD request có thể trả về 400 trong một số setup Docker
+        logger.info(f"Đã khởi tạo Elasticsearch client tới {url}")
     
     def create_index(self, index_name: str, mappings: Optional[Dict[str, Any]] = None,
                     settings: Optional[Dict[str, Any]] = None) -> bool:

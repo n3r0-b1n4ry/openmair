@@ -1,0 +1,6 @@
+{
+    "id": "scenario-005",
+    "name": "Disk Full",
+    "description": "No space left on device errors causing application crashes.",
+    "logs": "2026-05-15 14:10:00 INFO  [ImageProcessor] - Processing batch upload of 5000 images\n2026-05-15 14:15:22 WARN  [SystemMonitor] - Disk space on /var/log is at 95%\n2026-05-15 14:18:45 ERROR [ImageProcessor] - Failed to write temporary processing file: java.io.IOException: No space left on device\n2026-05-15 14:19:01 FATAL [ImageProcessor] - Service crashed due to unhandled IOException in main thread.\n2026-05-15 14:19:10 ERROR [APIGateway] - Image upload failed. Upstream returned 502 Bad Gateway."
+}

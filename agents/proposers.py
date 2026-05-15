@@ -79,7 +79,8 @@ Analysis principles:
                 temperature=model_config.temperature,
                 max_tokens=model_config.max_tokens,
                 timeout=model_config.timeout,
-                base_url=model_config.api_base
+                base_url=model_config.api_base,
+                api_key=model_config.api_key
             )
         elif provider == "anthropic":
             return ChatAnthropic(
@@ -116,29 +117,55 @@ Analysis principles:
             raise ValueError(f"Unsupported provider: {provider}")
     
     @with_all_protections(max_attempts=3, min_wait=1.0, max_wait=10.0)
-    async def analyze(self, incident_logs: str, proposer_id: str) -> Proposal:
+    async def analyze(self, incident_id: str, proposer_id: str) -> Proposal:
         """
         Analyze incident logs and generate a proposal
         
         Args:
-            incident_logs (str): Incident logs to analyze
+            incident_id (str): Incident ID to analyze
             proposer_id (str): Proposer identifier
             
         Returns:
             Proposal: Proposal from the proposer
         """
         try:
-            logger.info(f"{proposer_id} starting incident log analysis...")
+            logger.info(f"{proposer_id} starting incident log analysis for {incident_id}...")
             
+            # Fetch logs from Elasticsearch
+            try:
+                from infrastructure.elasticsearch_integration import ElasticsearchManager
+                es_manager = ElasticsearchManager(Config().get_elasticsearch_config())
+                query = {
+                    "query": {
+                        "match": {
+                            "incident_id": incident_id
+                        }
+                    },
+                    "sort": [{"timestamp": {"order": "asc"}}]
+                }
+                index_name = "incident_logs"
+                result = es_manager.es_client.search_logs(index_name, query, size=1000)
+                
+                if result.total > 0:
+                    fetched_logs = "\n".join([hit.get("message", "") for hit in result.hits])
+                    logger.info(f"{proposer_id} fetched {len(result.hits)} log lines from ES.")
+                else:
+                    logger.warning(f"{proposer_id} found no logs in ES for {incident_id}.")
+                    fetched_logs = "No logs found in Elasticsearch."
+            except Exception as e:
+                logger.error(f"{proposer_id} failed to fetch logs from ES: {e}")
+                fetched_logs = "Error fetching logs from Elasticsearch."
+
             # Invoke the model for analysis
             report = await self.chain.ainvoke({
-                "incident_logs": incident_logs,
+                "incident_logs": fetched_logs,
                 "format_instructions": self.parser.get_format_instructions()
             })
             
             # Create proposal
             proposal = Proposal(
                 proposer_id=proposer_id,
+                model_name=self.model_config.name,
                 report=report,
                 timestamp=datetime.now().isoformat()
             )
@@ -159,6 +186,7 @@ Analysis principles:
             
             return Proposal(
                 proposer_id=proposer_id,
+                model_name=self.model_config.name,
                 report=default_report,
                 timestamp=datetime.now().isoformat()
             )

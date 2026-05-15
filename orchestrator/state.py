@@ -1,6 +1,6 @@
 import operator
 from typing import List, Optional, Annotated
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from langgraph.graph import MessagesState
 
 class IncidentReport(BaseModel):
@@ -12,9 +12,17 @@ class IncidentReport(BaseModel):
     solution: str = Field(description="Remediation solution")
     confidence_score: float = Field(description="Confidence score (0-1)")
 
+    @field_validator('solution', 'root_cause', 'description', mode='before')
+    @classmethod
+    def coerce_to_string(cls, v):
+        if isinstance(v, list):
+            return "\n".join(str(item) for item in v)
+        return str(v)
+
 class Proposal(BaseModel):
     """Structure definition for a proposal from a Proposer"""
     proposer_id: str = Field(description="Proposer ID")
+    model_name: str = Field(default="", description="Model name of the proposer")
     report: IncidentReport = Field(description="Analysis report")
     timestamp: str = Field(description="Proposal creation time")
 
@@ -28,6 +36,7 @@ class Evaluation(BaseModel):
 
 class AIOpsState(MessagesState):
     """Global state definition for the AIOps system"""
+    incident_id: str                                            # ID of the incident
     incident_logs: str                                          # Input incident logs
     proposals: Annotated[list, operator.add]                    # List of proposals from Proposers
     evaluations: Annotated[list, operator.add]                  # List of evaluations from Judges

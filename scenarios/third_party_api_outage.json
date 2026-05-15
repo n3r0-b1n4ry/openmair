@@ -1,0 +1,6 @@
+{
+    "id": "scenario-007",
+    "name": "Third-Party API Outage",
+    "description": "Payment provider returning 503 or timing out.",
+    "logs": "2026-05-15 16:30:12 INFO  [CheckoutService] - Initiating payment charge via Stripe API for Order #8821\n2026-05-15 16:30:42 WARN  [CheckoutService] - Stripe API call took longer than 30000ms\n2026-05-15 16:31:12 ERROR [CheckoutService] - Stripe API request failed: HTTP 503 Service Unavailable\n2026-05-15 16:31:13 ERROR [CheckoutService] - Payment processing failed. Rolling back order transaction.\n2026-05-15 16:35:00 ERROR [APIGateway] - 50 payment requests failed in the last 5 minutes. Checkout Service error rate spiked to 80%."
+}

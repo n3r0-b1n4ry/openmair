@@ -1,0 +1,6 @@
+{
+    "id": "scenario-010",
+    "name": "Database Deadlock",
+    "description": "Concurrent transactions causing database deadlocks and rollbacks.",
+    "logs": "2026-05-15 19:15:10 INFO  [LedgerService] - Initiating transfer of $500 from Account A to Account B\n2026-05-15 19:15:10 INFO  [LedgerService] - Initiating transfer of $200 from Account B to Account A\n2026-05-15 19:15:11 ERROR [LedgerService] - Transaction failed: org.postgresql.util.PSQLException: ERROR: deadlock detected\n2026-05-15 19:15:11 ERROR [LedgerService] - Detail: Process 1024 waits for ShareLock on transaction 9942; blocked by process 1025. Process 1025 waits for ShareLock on transaction 9941; blocked by process 1024.\n2026-05-15 19:15:12 FATAL [LedgerService] - Failed to complete money transfer. Transaction rolled back."
+}

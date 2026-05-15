@@ -34,6 +34,7 @@ async def proposers_node(state: AIOpsState) -> dict:
     Graceful degradation: If incident_logs is empty, returns an empty list.
     """
     incident_logs = state.get("incident_logs", "")
+    incident_id = state.get("incident_id", "unknown")
     if not incident_logs:
         logger.warning("No incident_logs provided, skipping proposers step.")
         return {"proposals": []}
@@ -42,7 +43,7 @@ async def proposers_node(state: AIOpsState) -> dict:
         logger.info(f"Starting proposal generation from {len(proposers)} proposers...")
 
         tasks = [
-            proposer.analyze(incident_logs, f"proposer_{i}")
+            proposer.analyze(incident_id, f"proposer_{i}")
             for i, proposer in enumerate(proposers)
         ]
         proposals = await asyncio.gather(*tasks, return_exceptions=True)

@@ -1,0 +1,6 @@
+{
+    "id": "scenario-004",
+    "name": "Out of Memory Crash",
+    "description": "Memory leak leading to pod termination by the OS OOM killer.",
+    "logs": "2026-05-15 12:45:00 INFO  [ReportGenerator] - Starting generation of monthly sales report (ID: RPT-9942)\n2026-05-15 12:47:30 WARN  [ReportGenerator] - High memory usage detected: 85% of heap limit\n2026-05-15 12:49:15 WARN  [ReportGenerator] - High memory usage detected: 95% of heap limit. Triggering GC.\n2026-05-15 12:50:02 ERROR [ReportGenerator] - java.lang.OutOfMemoryError: Java heap space\n2026-05-15 12:50:05 FATAL [Kubelet] - Pod report-generator-6b8f84b79b-xj8p9 terminated. Reason: OOMKilled"
+}

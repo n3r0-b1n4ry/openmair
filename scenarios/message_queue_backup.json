@@ -1,0 +1,6 @@
+{
+    "id": "scenario-009",
+    "name": "Message Queue Backup",
+    "description": "Kafka/RabbitMQ consumer lag spiking, causing producer throttling.",
+    "logs": "2026-05-15 18:20:00 INFO  [AnalyticsProcessor] - Processing analytics events from Kafka topic 'user_events'\n2026-05-15 18:22:15 WARN  [AnalyticsProcessor] - Processing latency increased to 5000ms per batch\n2026-05-15 18:25:00 WARN  [KafkaMonitor] - Consumer group 'analytics_group' lag exceeded 1,000,000 messages\n2026-05-15 18:26:30 ERROR [APIGateway] - Failed to publish event to Kafka: TimeoutException - Topic 'user_events' not accepting messages\n2026-05-15 18:28:00 FATAL [AnalyticsProcessor] - Consumer thread died unexpectedly: OutOfMemoryError."
+}

@@ -1,0 +1,6 @@
+{
+    "id": "scenario-008",
+    "name": "Bad Config Deployment",
+    "description": "Invalid credentials deployed, causing immediate authentication errors on startup.",
+    "logs": "2026-05-15 17:00:00 INFO  [CatalogService] - Starting CatalogService v2.4.1 (PID: 1045)\n2026-05-15 17:00:02 INFO  [CatalogService] - Initializing database connection pool\n2026-05-15 17:00:03 ERROR [CatalogService] - Failed to connect to database: FATAL: password authentication failed for user 'catalog_db_user'\n2026-05-15 17:00:04 ERROR [CatalogService] - Application startup failed. Shutting down.\n2026-05-15 17:00:05 FATAL [Kubelet] - Pod catalog-service-d54b6899-2p9xk crash loop back-off. Restarting."
+}

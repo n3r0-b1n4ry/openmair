@@ -1,0 +1,6 @@
+{
+    "id": "scenario-001",
+    "name": "DDoS Attack",
+    "description": "High volume of requests causing API Gateway rate limiting and backend CPU spikes.",
+    "logs": "2026-05-15 10:00:01 WARN  [APIGateway] - High request rate detected from IP range 192.168.1.0/24 (5000 req/s)\n2026-05-15 10:00:03 ERROR [APIGateway] - Rate limit exceeded. Dropping requests.\n2026-05-15 10:00:05 WARN  [AuthService] - CPU utilization exceeded 95%\n2026-05-15 10:00:08 ERROR [AuthService] - Request timeout. Thread pool exhausted.\n2026-05-15 10:00:15 FATAL [APIGateway] - Upstream AuthService is unresponsive. Returning 503 Service Unavailable."
+}

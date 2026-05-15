@@ -1,0 +1,6 @@
+{
+    "id": "scenario-002",
+    "name": "Brute Force Login",
+    "description": "Multiple failed authentication attempts and Account Lockout events.",
+    "logs": "2026-05-15 10:15:01 WARN  [AuthService] - Failed login attempt for user admin@system.local from IP 203.0.113.5\n2026-05-15 10:15:02 WARN  [AuthService] - Failed login attempt for user admin@system.local from IP 203.0.113.5\n2026-05-15 10:15:02 WARN  [AuthService] - Failed login attempt for user admin@system.local from IP 203.0.113.5\n2026-05-15 10:15:03 WARN  [AuthService] - Failed login attempt for user admin@system.local from IP 203.0.113.5\n2026-05-15 10:15:03 ERROR [AuthService] - Maximum failed login attempts reached. Account admin@system.local locked for 30 minutes.\n2026-05-15 10:15:05 INFO  [SecurityAuditor] - Anomaly detected: Possible Brute Force Attack targeting admin account."
+}

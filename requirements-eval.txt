@@ -9,7 +9,8 @@ pinecone-client>=3.0.0
 
 # ELK Stack (chỉ dùng khi cần centralized logging)
 elasticsearch>=8.11.0
-logstash>=8.11.0
+# Note: Logstash is a Java app, not a pip package.
+# For Python -> Logstash integration use: python-logstash-async>=2.5.0
 
 # Additional utilities for evaluation
 datasets>=2.18.0

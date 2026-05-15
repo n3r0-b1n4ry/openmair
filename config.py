@@ -14,6 +14,7 @@ class ModelConfig:
     name: str
     model_id: str
     api_base: Optional[str] = None
+    api_key: Optional[str] = None
     temperature: float = 0.7
     max_tokens: int = 4096
     timeout: int = 60
@@ -36,65 +37,64 @@ class Config:
     LANGCHAIN_API_KEY: str = os.getenv("LANGCHAIN_API_KEY", "")
     LANGCHAIN_PROJECT: str = os.getenv("LANGCHAIN_PROJECT", "aiops-moa-system")
     
-    # vLLM endpoints for open-source models
-    VLLM_QWEN35_URL: str = os.getenv("VLLM_QWEN35_URL", "http://localhost:8000")      # Qwen 3.5 27B
-    VLLM_LLAMA4_URL: str = os.getenv("VLLM_LLAMA4_URL", "http://localhost:8001")       # Llama 4 17B
-    VLLM_DEVSTRAL_URL: str = os.getenv("VLLM_DEVSTRAL_URL", "http://localhost:8002")   # Devstral Small 2 24B
-    VLLM_GEMMA4_URL: str = os.getenv("VLLM_GEMMA4_URL", "http://localhost:8003")       # Gemma 4 27B
-    VLLM_R1_DISTILL_URL: str = os.getenv("VLLM_R1_DISTILL_URL", "http://localhost:8004")  # DeepSeek R1 Distill
-    
     # Logging configuration
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     
     # Judge Model (Oracle) - Uses premium models
-    JUDGE_MODEL: str = os.getenv("JUDGE_MODEL", "claude-opus-4.7")  # Default: Claude Opus 4.7
-    JUDGE_ALTERNATIVE: str = os.getenv("JUDGE_ALTERNATIVE", "gpt-4o")  # Fallback: GPT-4o
+    JUDGE_MODEL: str = os.getenv("JUDGE_MODEL", "gpt-5.5")  # Default: Claude Opus 4.7
+    JUDGE_ALTERNATIVE: str = os.getenv("JUDGE_ALTERNATIVE", "gpt-5.4-mini")  # Fallback: GPT-4o
     
     # Gemini 3.1 Pro for Judge (optional)
     GEMINI_PRO_MODEL: str = os.getenv("GEMINI_PRO_MODEL", "gemini-3.1-pro")
     
-    # Ollama configuration for local processing
-    OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-    
+    # LLM_API_BASEURL configuration
+    LLM_API_BASEURL: str = os.getenv("LLM_API_BASEURL", "https://mkp-api.fptcloud.com/v1")
+    LLM_API_KEY: str = os.getenv("LLM_API_KEY", "")
+
     # Proposer Models (Candidate LLMs) - State-of-the-art open-source models
     PROPOSER_MODELS: List[ModelConfig] = [
         ModelConfig(
-            name="Qwen 3.5 27B",
-            model_id="Qwen/Qwen3.5-27B-Instruct",
-            api_base="http://localhost:8000/v1",
+            name="Qwen 3.6 27B",
+            model_id="Qwen3.6-27B",
+            api_base=LLM_API_BASEURL,
+            api_key=LLM_API_KEY,
             temperature=0.7,
-            max_tokens=4096,
-            provider="openai"
-        ),
-        ModelConfig(
-            name="Llama 4 17B Instruct",
-            model_id="meta-llama/Meta-Llama-4-17B-Instruct",
-            api_base="http://localhost:8001/v1",
-            temperature=0.7,
-            max_tokens=4096,
-            provider="openai"
-        ),
-        ModelConfig(
-            name="Devstral Small 2 24B",
-            model_id="mistralai/Devstral-Small-2-24B-Instruct",
-            api_base="http://localhost:8002/v1",
-            temperature=0.6,
             max_tokens=8192,
             provider="openai"
         ),
         ModelConfig(
-            name="Gemma 4 27B",
-            model_id="google/Gemma-4-27B-Instruct",
-            api_base="http://localhost:8003/v1",
+            name="GPT OSS 20B",
+            model_id="gpt-oss-20b",
+            api_base=LLM_API_BASEURL,
+            api_key=LLM_API_KEY,
             temperature=0.7,
-            max_tokens=4096,
+            max_tokens=8192,
             provider="openai"
         ),
         ModelConfig(
-            name="DeepSeek R1 Distill Llama 70B",
-            model_id="deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
-            api_base="http://localhost:8004/v1",
-            temperature=0.6,
+            name="SaoLa4-medium",
+            model_id="SaoLa4-medium",
+            api_base=LLM_API_BASEURL,
+            api_key=LLM_API_KEY,
+            temperature=0.7,
+            max_tokens=8192,
+            provider="openai"
+        ),
+        ModelConfig(
+            name="Gemma 4 26B A4B IT",
+            model_id="gemma-4-26B-A4B-it",
+            api_base=LLM_API_BASEURL,
+            api_key=LLM_API_KEY,
+            temperature=0.7,
+            max_tokens=8192,
+            provider="openai"
+        ),
+        ModelConfig(
+            name="Qwen3-32B",
+            model_id="Qwen3-32B",
+            api_base=LLM_API_BASEURL,
+            api_key=LLM_API_KEY,
+            temperature=0.7,
             max_tokens=8192,
             provider="openai"
         ),
@@ -130,7 +130,7 @@ class Config:
     PINECONE_INDEX_NAME: str = os.getenv("PINECONE_INDEX_NAME", "aiops-logs")
     
     # Elasticsearch configuration for ELK Stack
-    ELASTICSEARCH_HOST: str = os.getenv("ELASTICSEARCH_HOST", "localhost")
+    ELASTICSEARCH_HOST: str = os.getenv("ELASTICSEARCH_HOST", "127.0.0.1")
     ELASTICSEARCH_PORT: int = int(os.getenv("ELASTICSEARCH_PORT", "9200"))
     ELASTICSEARCH_USERNAME: Optional[str] = os.getenv("ELASTICSEARCH_USERNAME", None)
     ELASTICSEARCH_PASSWORD: Optional[str] = os.getenv("ELASTICSEARCH_PASSWORD", None)
@@ -182,6 +182,7 @@ class Config:
             {
                 "model": model.model_id,
                 "api_base": model.api_base,
+                "api_key": model.api_key,
                 "temperature": model.temperature,
                 "max_tokens": model.max_tokens,
                 "timeout": model.timeout

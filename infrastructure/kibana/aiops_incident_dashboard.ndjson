@@ -1,0 +1,2 @@
+{"attributes":{"fieldAttrs":"{}","fields":"[]","runtimeFieldMap":"{}","title":"aiops-logs-*","timeFieldName":"timestamp"},"id":"aiops-logs-*","references":[],"type":"index-pattern","updated_at":"2026-05-15T00:00:00.000Z","version":"WzEsMV0="}
+{"attributes":{"fieldAttrs":"{}","fields":"[]","runtimeFieldMap":"{}","title":"logstash-*","timeFieldName":"@timestamp"},"id":"logstash-*","references":[],"type":"index-pattern","updated_at":"2026-05-15T00:00:00.000Z","version":"WzEsMV0="}

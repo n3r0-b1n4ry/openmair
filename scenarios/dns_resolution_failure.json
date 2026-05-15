@@ -1,0 +1,6 @@
+{
+    "id": "scenario-006",
+    "name": "DNS Resolution Failure",
+    "description": "Internal service unable to resolve another service's hostname.",
+    "logs": "2026-05-15 15:05:01 INFO  [NotificationService] - Attempting to send email receipt for Order #44592\n2026-05-15 15:05:10 ERROR [NotificationService] - UnknownHostException: email-provider-api.internal.cluster.local\n2026-05-15 15:05:15 ERROR [NotificationService] - Failed to send email receipt. Re-queueing message.\n2026-05-15 15:05:20 FATAL [CoreDNS] - DNS lookup timeout for email-provider-api.internal.cluster.local. No healthy endpoints found."
+}
