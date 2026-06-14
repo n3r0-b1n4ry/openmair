@@ -6,7 +6,7 @@ This document provides a comprehensive visual guide to the Multi-Agent AIOps Sys
 
 ## 1. High-Level Architecture
 
-The system follows a **Mixture-of-Agents (MoA)** pattern with three distinct agent tiers. Incident logs enter through the LangGraph Orchestrator, which dispatches them to multiple Proposer agents running in parallel. Each Proposer independently analyzes the logs and produces a Root Cause Analysis (RCA) report. The Judge agent then evaluates all reports, filters out hallucinations, and synthesizes a single optimal solution. Finally, the Executor agent carries out the approved remediation actions.
+The system follows a **Mixture-of-Agents (MoA)** pattern with three distinct agent tiers. Incident logs enter through the LangGraph Orchestrator, which dispatches them to multiple Proposer agents running in parallel. Each Proposer independently analyzes the logs and produces a Root Cause Analysis (RCA) report. The Judge agent then evaluates all reports, filters out hallucinations, and synthesizes a single optimal solution. Finally, the Executor agent carries out the approved remediation actions using **gpt-5.4-nano** with Human-in-the-Loop CLI validation.
 
 > **Key design principle:** By using multiple diverse LLMs as Proposers and a premium LLM as the Judge, the system reduces individual model biases and hallucinations through cross-validation.
 
@@ -19,19 +19,19 @@ graph TB
     subgraph Proposers["Proposer Agents (Candidate LLMs via vLLM)"]
         P1["Qwen 3.6 27B"]
         P2["GPT OSS 20B"]
-        P3["SaoLa4-medium"]
+        P3["DeepSeek-V4-Flash"]
         P4["Gemma 4 26B A4B IT"]
         P5["Qwen3-32B"]
     end
 
     subgraph Judge["Judge Agent (Oracle LLM)"]
-        J1["GPT-5.5<br/>(default)"]
-        J2["GPT-5.4-mini<br/>(fallback)"]
+        J1["gpt-5.4<br/>(default)"]
+        J2["gpt-5.4-mini<br/>(fallback)"]
         J3["Gemini 3.1 Pro<br/>(alternative)"]
     end
 
     subgraph Executor["Executor Agent"]
-        E1["GPT-4o Mini"]
+        E1["gpt-5.4-nano"]
     end
 
     subgraph Orchestrator["LangGraph Orchestrator"]
@@ -57,9 +57,9 @@ graph TB
 
 | Component | Description | Models |
 |-----------|-------------|--------|
-| **Proposers** | 5 open-source LLMs deployed locally via vLLM. They run in parallel to maximize diversity of analysis perspectives. | Qwen 3.6 27B, GPT OSS 20B, SaoLa4-medium, Gemma 4 26B A4B IT, Qwen3-32B |
-| **Judge** | A single premium LLM that acts as an oracle. It does not analyze from scratch — instead it evaluates, compares, and synthesizes the Proposers' outputs. | GPT-5.5 (default), GPT-5.4-mini (fallback), Gemini 3.1 Pro (alternative) |
-| **Executor** | A lightweight model that translates the Judge's final report into concrete remediation actions (e.g., API calls, scripts, restarts). | GPT-4o Mini |
+| **Proposers** | 5 open-source LLMs deployed locally via vLLM. They run in parallel to maximize diversity of analysis perspectives. | Qwen 3.6 27B, GPT OSS 20B, DeepSeek-V4-Flash, Gemma 4 26B A4B IT, Qwen3-32B |
+| **Judge** | A single premium LLM that acts as an oracle. It does not analyze from scratch — instead it evaluates, compares, and synthesizes the Proposers' outputs. | gpt-5.4 (default), gpt-5.4-mini (fallback), Gemini 3.1 Pro (alternative) |
+| **Executor** | A lightweight model that translates the Judge's final report into concrete remediation actions (e.g., API calls, scripts, restarts). | gpt-5.4-nano |
 | **Orchestrator** | LangGraph-based state machine that maintains a shared `AIOpsState` and routes data between agents using conditional edges. | — |
 
 ---
@@ -142,11 +142,11 @@ sequenceDiagram
     participant Orch as LangGraph Orchestrator
     participant P1 as Qwen 3.6 27B
     participant P2 as GPT OSS 20B
-    participant P3 as SaoLa4-medium
+    participant P3 as DeepSeek-V4-Flash
     participant P4 as Gemma 4 26B A4B IT
     participant P5 as Qwen3-32B
-    participant Judge as Judge (GPT-5.5)
-    participant Exec as Executor (GPT-4o Mini)
+    participant Judge as Judge (gpt-5.4)
+    participant Exec as Executor (gpt-5.4-nano)
 
     User->>Orch: Submit incident logs
     
@@ -202,7 +202,7 @@ graph LR
     subgraph GPU_Cluster["GPU Cluster (vLLM)"]
         V1["vllm-qwen35<br/>:8000"]
         V2["vllm-llama4<br/>:8001"]
-        V3["vllm-devstral<br/>:8002"]
+        V3["vllm-deepseek<br/>:8002"]
         V4["vllm-gemma4<br/>:8003"]
         V5["vllm-r1-distill<br/>:8004"]
     end
@@ -248,7 +248,7 @@ graph LR
 |---------|------|---------|
 | vllm-qwen36 | 8000 | Qwen 3.6 27B inference (OpenAI-compatible API) |
 | vllm-gptoss | 8001 | GPT OSS 20B inference |
-| vllm-saola4 | 8002 | SaoLa4-medium inference |
+| vllm-deepseek | 8002 | DeepSeek-V4-Flash inference |
 | vllm-gemma4 | 8003 | Gemma 4 26B A4B IT inference |
 | vllm-qwen3-32b | 8004 | Qwen3-32B inference |
 | Nginx | 8080 | Load balancer for vLLM containers |

@@ -98,3 +98,30 @@ STEP 4: Make the final verdict
 
 {format_instructions}
 """
+
+
+# ============================================================================
+# Executor Prompts
+# ============================================================================
+
+EXECUTOR_SYSTEM_PROMPT = """You are an expert systems remediation executor.
+Your role is to translate a high-level incident resolution recommendation (from an incident report) into a concrete, sequential, and safe execution plan consisting of specific commands, configurations, API calls, or verification steps.
+
+Provide precise commands and assess safety limits carefully. Safe commands are read-only commands (e.g., checking status, disk space, or logs) or notifications. Restarts, configuration changes, IP blocking, or file deletions are NOT safe to auto-run and require manual approval."""
+
+EXECUTOR_HUMAN_PROMPT = """
+Translate the following incident report and solution recommendation into a detailed list of remediation actions:
+
+=== INCIDENT REPORT ===
+Incident ID: {incident_id}
+Description: {description}
+Root Cause: {root_cause}
+Recommended Solution: {solution}
+
+Requirements:
+1. Break down the solution into concrete, actionable steps.
+2. For each step, determine its type (bash, kubernetes, api, db, config, log_cleanup, notification, or mock), target resource/service, and the exact command or payload.
+3. Assess whether each step is safe to auto-run (read-only queries, status checks, non-destructive commands are safe; restarts, resource deletions, configurations, iptables blocks are NOT safe to auto-run).
+
+{format_instructions}
+"""

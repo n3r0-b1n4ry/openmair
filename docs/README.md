@@ -8,11 +8,11 @@ This system is an advanced AIOps (AI for IT Operations) solution using a Mixture
 
 The system consists of three main types of agents:
 
-1. **Proposers (Candidate Agents)**: State-of-the-art open-source LLMs (Qwen 3.6 27B, GPT OSS 20B, SaoLa4-medium, Gemma 4 26B A4B IT, Qwen3-32B) running locally via vLLM, responsible for analyzing incident logs and generating independent RCA reports.
+1. **Proposers (Candidate Agents)**: State-of-the-art open-source LLMs (Qwen 3.6 27B, GPT OSS 20B, DeepSeek-V4-Flash, Gemma 4 26B A4B IT, Qwen3-32B) running locally via vLLM, responsible for analyzing incident logs and generating independent RCA reports.
 
-2. **Judge (Evaluator Agent)**: A premium LLM (GPT-5.5 - default, GPT-5.4-mini - fallback, Gemini 3.1 Pro) acting as a judge, evaluating and synthesizing reports from Proposers to make the final decision.
+2. **Judge (Evaluator Agent)**: A premium LLM (gpt-5.4 - default, gpt-5.4-mini - fallback, Gemini 3.1 Pro) acting as a judge, evaluating and synthesizing reports from Proposers to make the final decision.
 
-3. **Executor (Execution Agent)**: Performs incident remediation actions based on the Judge's decision.
+3. **Executor (Execution Agent)**: A lightweight LLM (gpt-5.4-nano - default) that performs incident remediation actions based on the Judge's decision, wrapped with a Human-in-the-Loop CLI approval.
 
 The entire workflow is orchestrated by LangGraph, maintaining a global state shared across all agents.
 
@@ -134,10 +134,10 @@ Configuration parameters can be modified in the `config.py` file.
 - `LLM_API_KEY`: API key for accessing the local models.
 
 ### Model Selection (2026)
-- `JUDGE_MODEL`: Model for the Judge Agent (default: gpt-5.5)
+- `JUDGE_MODEL`: Model for the Judge Agent (default: gpt-5.4)
 - `JUDGE_ALTERNATIVE`: Alternative model for the Judge (default: gpt-5.4-mini)
 - `GEMINI_PRO_MODEL`: Gemini model for the Judge (default: gemini-3.1-pro)
-- `EXECUTOR_MODEL`: Model for the Executor Agent (default: gpt-4o-mini)
+- `EXECUTOR_MODEL`: Model for the Executor Agent (default: gpt-5.4-nano)
 
 ### Logging & Optimization
 - `LOG_LEVEL`: Logging level (DEBUG, INFO, WARNING, ERROR)

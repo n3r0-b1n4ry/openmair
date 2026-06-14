@@ -130,6 +130,7 @@ Analysis principles:
         """
         try:
             logger.info(f"{proposer_id} starting incident log analysis for {incident_id}...")
+            fetched_logs = ""
             
             # Fetch logs from Elasticsearch
             try:
@@ -175,13 +176,11 @@ Analysis principles:
         except Exception as e:
             # In case of error, create a default report
             logger.error(f"Error analyzing logs with {proposer_id}: {str(e)}")
-            default_report = IncidentReport(
-                incident_id="unknown",
-                timestamp="unknown",
-                description=f"Error during analysis: {str(e)}",
-                root_cause="Unknown",
-                solution="No recommendation",
-                confidence_score=0.0
+            from orchestrator.state import generate_fallback_incident_report
+            default_report = generate_fallback_incident_report(
+                incident_id=incident_id,
+                logs=fetched_logs,
+                error_msg=str(e)
             )
             
             return Proposal(

@@ -17,9 +17,9 @@ The Multi-Agent AIOps system uses a Mixture-of-Agents (MoA) architecture combine
 - **Strengths**: Fast inference, solid benchmark performance for logs and traces.
 - **Application in the system**: Log extraction and reasoning.
 
-### 3. SaoLa4-medium
-- **Size**: Medium
-- **Strengths**: High performance in language and technical text parsing.
+### 3. DeepSeek-V4-Flash
+- **Size**: Lightweight Flash Model
+- **Strengths**: High inference speed, optimized for quick and efficient text reasoning.
 - **Application in the system**: Incident log analysis.
 
 ### 4. Gemma 4 26B A4B IT
@@ -36,12 +36,12 @@ The Multi-Agent AIOps system uses a Mixture-of-Agents (MoA) architecture combine
 
 ## Judge Model (Oracle LLM)
 
-### 1. GPT-5.5 (Default)
+### 1. gpt-5.4 (Default)
 - **Developer**: OpenAI
-- **Strengths**: The most powerful model currently integrated. Acts as the default Judge.
+- **Strengths**: Premium reasoning and evaluation capabilities. Acts as the default Judge.
 - **Configuration**: Temperature=0.0, Max Tokens=8192
 
-### 2. GPT-5.4-mini (Fallback)
+### 2. gpt-5.4-mini (Fallback)
 - **Developer**: OpenAI
 - **Strengths**: Faster, highly capable fallback model for the Judge role.
 - **Configuration**: Temperature=0.0, Max Tokens=8192
@@ -53,8 +53,8 @@ The Multi-Agent AIOps system uses a Mixture-of-Agents (MoA) architecture combine
 
 ## Executor Model
 
-### GPT-4o Mini
+### gpt-5.4-nano (Default)
 - **Developer**: OpenAI
-- **Strengths**: High performance at low cost.
-- **Application in the system**: Executing incident remediation actions.
+- **Strengths**: Ultra-lightweight model optimized for low-latency command parsing.
+- **Application in the system**: Translating Judge recommendations into structured execution actions.
 - **Configuration**: Temperature=0.3, Max Tokens=2048

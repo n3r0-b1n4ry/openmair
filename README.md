@@ -22,9 +22,9 @@ The system uses three types of agents:
 
 | Agent | Role | Models |
 |-------|------|--------|
-| **Proposers** | Analyze incident logs, generate RCA reports | Qwen 3.6 27B, GPT OSS 20B, SaoLa4-medium, Gemma 4 26B A4B IT, Qwen3-32B |
-| **Judge** | Evaluate and synthesize proposals | GPT-5.5, GPT-5.4-mini, Gemini 3.1 Pro |
-| **Executor** | Execute remediation actions | GPT-4o Mini |
+| **Proposers** | Analyze incident logs, generate RCA reports | Qwen 3.6 27B, GPT OSS 20B, DeepSeek-V4-Flash, Gemma 4 26B A4B IT, Qwen3-32B |
+| **Judge** | Evaluate and synthesize proposals | gpt-5.4, gpt-5.4-mini, Gemini 3.1 Pro |
+| **Executor** | Execute remediation actions | gpt-5.4-nano |
 
 All proposers run in parallel via **vLLM**, orchestrated by **LangGraph**.
 

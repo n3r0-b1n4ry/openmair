@@ -47,7 +47,11 @@ If a standard runbook (reference solution) exists for a scenario, the system cal
 
 ## 4. Visualizing Scores
 
-When you run `python benchmark.py --all`, the system automatically ingests these scores into Elasticsearch. You can track model performance over time via Grafana or Kibana by analyzing the `metadata.confidence_score` and the final Judge evaluation scores associated with each Proposer's logs (`aiops-reports` index).
+When scenarios are run, the system uses a background `ElasticsearchLogHandler` to stream logs in real-time to the `aiops-logs-reports` index. Additionally, the individual Judge evaluation scores (0 to 10 scale) are attached under the `"judge_score"` metadata of each proposer report. 
+
+This enables live analytics via Kibana and Grafana dashboards, which include:
+- **Action History (Executor)**: A log viewer tracing the status and output of executed remediation commands in real-time.
+- **Average Proposer Scores**: A horizontal bar gauge reflecting the mean Judge evaluation scores for each candidate proposer model.
 
 ![Proposer Efficiency Chart](proposer_efficiency_chart.png)
 

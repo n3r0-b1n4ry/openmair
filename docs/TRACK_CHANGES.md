@@ -2,6 +2,15 @@
 
 ---
 
+## [2026-06-14] Integration of Executor Agent, Real-time Logging, and Dashboard Updates
+- **Executor Agent**: Implemented `ExecutorAgent` to translate Judge remediation recommendations into concrete actions, adding Human-in-the-Loop CLI validation before executing scripts/commands.
+- **Real-time Logging Pipeline**: Added queue-based asynchronous `ElasticsearchLogHandler` to stream live agent reasoning and executor action traces to Elasticsearch.
+- **Judge Evaluation Integration**: Integrated the Judge evaluation scores into the indexed proposer reports' metadata in Elasticsearch.
+- **Dashboard Upgrades**: Added **Action History** log panels and **Average Proposer Scores** bar gauge charts to both Grafana and Kibana dashboards.
+- **Model Upgrades**: Replaced `"SaoLa4-small"` with `"DeepSeek-V4-Flash"` as proposer, set default Judge model to `"gpt-5.4"`, and default Executor model to `"gpt-5.4-nano"`.
+
+---
+
 ## [2026-05-15] Documentation Update for Latest Models & Infrastructure
 - Synchronized all documentation to match `config.py` model variables (Qwen 3.6 27B, GPT OSS 20B, SaoLa4-medium, Gemma 4 26B A4B IT, Qwen3-32B, GPT-5.5, GPT-5.4-mini).
 - Updated Elasticsearch logging pipeline documentation to reflect changes in benchmark ingestion.

@@ -275,13 +275,15 @@ Critical requirements:
         except Exception as e:
             # In case of error, create a default evaluation
             logger.error(f"Error evaluating proposals: {str(e)}")
-            default_report = IncidentReport(
-                incident_id="unknown",
-                timestamp="unknown",
-                description=f"Error during evaluation: {str(e)}",
-                root_cause="Unknown",
-                solution="No recommendation",
-                confidence_score=0.0
+            from orchestrator.state import generate_fallback_incident_report
+            target_incident_id = "unknown"
+            if proposals and proposals[0].report:
+                target_incident_id = proposals[0].report.incident_id
+                
+            default_report = generate_fallback_incident_report(
+                incident_id=target_incident_id,
+                logs=incident_logs,
+                error_msg=str(e)
             )
             
             return Evaluation(

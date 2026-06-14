@@ -6,13 +6,14 @@ This project builds an Automated Incident Response system (AIOps). The system in
 
 ## 2. Agent Architecture
 
-* **Candidate Proposers:** State-of-the-art open-source LLMs (Qwen 3.6 27B, GPT OSS 20B, SaoLa4-medium, Gemma 4 26B A4B IT, Qwen3-32B) deployed locally via vLLM. These agents operate in parallel to analyze logs and generate multiple independent RCA reports.
-* **Oracle Aggregator:** A premium model (GPT-5.5, GPT-5.4-mini, or Gemini 3.1 Pro). Its task is not to analyze from scratch, but to synthesize, compare, and evaluate the Proposers' reports, thereby filtering out hallucinations and producing the optimal remediation action.
-* **Orchestrator:** The entire workflow is managed by LangGraph, maintaining a global State shared across all agents.
+* **Candidate Proposers**: State-of-the-art open-source LLMs (Qwen 3.6 27B, GPT OSS 20B, DeepSeek-V4-Flash, Gemma 4 26B A4B IT, Qwen3-32B) deployed locally via vLLM. These agents operate in parallel to analyze logs and generate multiple independent RCA reports.
+* **Oracle Aggregator**: A premium model (gpt-5.4, gpt-5.4-mini, or Gemini 3.1 Pro). Its task is not to analyze from scratch, but to evaluate and synthesize the Proposers' reports, producing the optimal remediation plan.
+* **Executor Agent**: Translates the Judge's recommended actions into structured executable tasks, applies the Human-in-the-Loop CLI approval gating, and runs them.
+* **Orchestrator**: The entire workflow is managed by LangGraph, maintaining a global State shared across all agents.
 
 ## 3. Source Code Structure (Monorepo)
 
-* `/agents`: Defines the workflows for Candidate LLMs and Oracle LLM.
+* `/agents`: Defines the workflows for Candidate LLMs, Oracle LLM, and Executor Agent.
 * `/orchestrator`: LangGraph Graph structure, Router, and States.
 * `/prompts`: Collection of specialized prompt templates designed to counter bias.
 * `/infrastructure`: Docker Compose configuration for deploying vLLM, ELK Stack, and API Gateway.
@@ -23,14 +24,17 @@ This project builds an Automated Incident Response system (AIOps). The system in
 ### Proposer Models (Candidate LLMs)
 1. **Qwen 3.6 27B**
 2. **GPT OSS 20B**
-3. **SaoLa4-medium**
+3. **DeepSeek-V4-Flash**
 4. **Gemma 4 26B A4B IT**
 5. **Qwen3-32B**
 
 ### Judge Model (Oracle LLM)
-1. **GPT-5.5** - Default Oracle Judge
-2. **GPT-5.4-mini** - Fallback Judge
+1. **gpt-5.4** - Default Oracle Judge
+2. **gpt-5.4-mini** - Fallback Judge
 3. **Gemini 3.1 Pro** - Alternative Judge
+
+### Executor Model
+1. **gpt-5.4-nano** - Default Executor Model
 
 See `MODELS.md` for more details.
 

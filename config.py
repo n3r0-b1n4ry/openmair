@@ -5,6 +5,10 @@ import os
 import logging
 from typing import Optional, Dict, List
 from dataclasses import dataclass
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -24,13 +28,13 @@ class Config:
     """System configuration class"""
     
     # OpenAI API configuration for Judge Agent
-    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY") or "mock-openai-key"
     
     # Anthropic API configuration for Claude (optional)
-    ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
+    ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY") or "mock-anthropic-key"
     
     # Google API configuration for Gemini (optional)
-    GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "")
+    GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY") or "mock-google-key"
     
     # LangSmith configuration for tracing (optional)
     LANGCHAIN_TRACING_V2: bool = os.getenv("LANGCHAIN_TRACING_V2", "false").lower() == "true"
@@ -41,7 +45,7 @@ class Config:
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     
     # Judge Model (Oracle) - Uses premium models
-    JUDGE_MODEL: str = os.getenv("JUDGE_MODEL", "gpt-5.5")  # Default: Claude Opus 4.7
+    JUDGE_MODEL: str = os.getenv("JUDGE_MODEL", "gpt-5.4")  # Default: Claude Opus 4.7
     JUDGE_ALTERNATIVE: str = os.getenv("JUDGE_ALTERNATIVE", "gpt-5.4-mini")  # Fallback: GPT-4o
     
     # Gemini 3.1 Pro for Judge (optional)
@@ -49,7 +53,7 @@ class Config:
     
     # LLM_API_BASEURL configuration
     LLM_API_BASEURL: str = os.getenv("LLM_API_BASEURL", "")
-    LLM_API_KEY: str = os.getenv("LLM_API_KEY", "")
+    LLM_API_KEY: str = os.getenv("LLM_API_KEY") or "mock-llm-key"
 
     # Proposer Models (Candidate LLMs) - State-of-the-art open-source models
     PROPOSER_MODELS: List[ModelConfig] = [
@@ -72,8 +76,8 @@ class Config:
             provider="openai"
         ),
         ModelConfig(
-            name="SaoLa4-medium",
-            model_id="SaoLa4-medium",
+            name="DeepSeek-V4-Flash",
+            model_id="DeepSeek-V4-Flash",
             api_base=LLM_API_BASEURL,
             api_key=LLM_API_KEY,
             temperature=0.7,
@@ -101,7 +105,10 @@ class Config:
     ]
     
     # Executor Model (lightweight model for execution)
-    EXECUTOR_MODEL: str = os.getenv("EXECUTOR_MODEL", "gpt-4o-mini")
+    EXECUTOR_MODEL: str = os.getenv("EXECUTOR_MODEL", "gpt-5.4-nano")
+    AUTO_APPROVE_REMEDIATION: bool = os.getenv("AUTO_APPROVE_REMEDIATION", "false").lower() == "true"
+    MOCK_REMEDIATION: bool = os.getenv("MOCK_REMEDIATION", "true").lower() == "true"
+    
     
     # Optimization settings
     ENABLE_CACHING: bool = os.getenv("ENABLE_CACHING", "true").lower() == "true"

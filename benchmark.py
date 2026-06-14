@@ -59,6 +59,23 @@ async def evaluate_scenario(scenario: Dict[str, Any]):
         "messages": [],
     }
     
+    # Set current incident ID in env so the log handler picks it up
+    os.environ["CURRENT_INCIDENT_ID"] = scenario.get("id")
+    
+    # Setup real-time ES log handler
+    es_handler = None
+    if es_manager:
+        try:
+            from infrastructure.elasticsearch_integration import ElasticsearchLogHandler
+            index_name = f"{config.ELASTICSEARCH_INDEX_PREFIX}-reports"
+            es_handler = ElasticsearchLogHandler(es_manager.es_client, index_name)
+            # Use same formatter as basicConfig
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            es_handler.setFormatter(formatter)
+            logging.getLogger().addHandler(es_handler)
+        except Exception as e:
+            logger.warning(f"Failed to setup real-time Elasticsearch log handler: {e}")
+            
     try:
         if es_manager:
             # Push the original logs to Elasticsearch for dashboard visualization and proposer fetching
@@ -80,25 +97,32 @@ async def evaluate_scenario(scenario: Dict[str, Any]):
         final_report = final_state.get("final_report")
         
         if es_manager:
-            
-            # Push individual proposer reports
+            # Push individual proposer reports with Judge scores
             proposals = final_state.get("proposals", [])
-            for proposal in proposals:
+            evaluations = final_state.get("evaluations", [])
+            judge_scores = evaluations[0].scores if (evaluations and len(evaluations) > 0) else []
+            
+            for i, proposal in enumerate(proposals):
                 try:
                     from datetime import datetime
+                    judge_score = judge_scores[i] if i < len(judge_scores) else None
+                    metadata = {
+                        "confidence_score": proposal.report.confidence_score,
+                        "root_cause": proposal.report.root_cause,
+                        "solution": proposal.report.solution,
+                        "is_proposal": True,
+                        "model_name": proposal.model_name
+                    }
+                    if judge_score is not None:
+                        metadata["judge_score"] = judge_score
+                        
                     proposer_log = LogEntry(
                         timestamp=datetime.now().isoformat(),
                         level="INFO",
                         service=f"aiops-{proposal.proposer_id}",
                         message=f"Proposal from {proposal.proposer_id}: {proposal.report.root_cause}",
                         incident_id=scenario.get("id"),
-                        metadata={
-                            "confidence_score": proposal.report.confidence_score,
-                            "root_cause": proposal.report.root_cause,
-                            "solution": proposal.report.solution,
-                            "is_proposal": True,
-                            "model_name": proposal.model_name
-                        }
+                        metadata=metadata
                     )
                     es_manager.es_client.index_log(f"{config.ELASTICSEARCH_INDEX_PREFIX}-reports", proposer_log)
                 except Exception as e:
@@ -129,9 +153,45 @@ async def evaluate_scenario(scenario: Dict[str, Any]):
                 es_manager.es_client.index_log(f"{config.ELASTICSEARCH_INDEX_PREFIX}-reports", report_log)
         else:
             logger.warning("No final report was generated.")
+
+        # Log executed actions to console and ES
+        executed_actions = final_state.get("executed_actions", [])
+        if executed_actions:
+            print("\n--- EXECUTOR ACTION REPORT ---")
+            for action in executed_actions:
+                print(f"- {action}")
+            print("------------------------------\n")
+            
+            if es_manager:
+                from datetime import datetime
+                for action in executed_actions:
+                    try:
+                        action_log = LogEntry(
+                            timestamp=datetime.now().isoformat(),
+                            level="INFO",
+                            service="aiops-executor",
+                            message=f"Action result: {action}",
+                            incident_id=scenario.get("id"),
+                            metadata={
+                                "action_detail": action,
+                                "is_executed_action": True
+                            }
+                        )
+                        es_manager.es_client.index_log(f"{config.ELASTICSEARCH_INDEX_PREFIX}-reports", action_log)
+                    except Exception as e:
+                        logger.warning(f"Failed to log executed action to ES: {e}")
+        else:
+            logger.warning("No executor actions were executed.")
             
     except Exception as e:
         logger.error(f"Error evaluating scenario {scenario.get('id')}: {str(e)}")
+    finally:
+        if es_handler:
+            try:
+                logging.getLogger().removeHandler(es_handler)
+            except Exception:
+                pass
+        os.environ.pop("CURRENT_INCIDENT_ID", None)
 
 async def main():
     parser = argparse.ArgumentParser(description="Evaluate AIOps System with Scenarios")

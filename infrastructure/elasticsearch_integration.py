@@ -274,6 +274,84 @@ class ElasticsearchClient:
 
 
 # ============================================================================
+# Elasticsearch Log Handler (Real-time)
+# ============================================================================
+
+class ElasticsearchLogHandler(logging.Handler):
+    """
+    Log handler to push logs to Elasticsearch in real-time.
+    Uses a background worker thread and a queue to prevent blocking.
+    """
+    def __init__(self, es_client, index_name: str):
+        super().__init__()
+        self.es_client = es_client
+        self.index_name = index_name
+        import queue
+        import threading
+        self.queue = queue.Queue()
+        self.worker_thread = threading.Thread(target=self._worker, daemon=True)
+        self.worker_thread.start()
+        
+    def emit(self, record):
+        try:
+            # Skip Elasticsearch/HTTP client internal logging to avoid infinite recursion
+            name = record.name.lower()
+            if any(k in name for k in ["elasticsearch", "elastic_transport", "urllib3", "httpcore", "httpx"]):
+                return
+                
+            msg = self.format(record)
+            incident_id = os.getenv("CURRENT_INCIDENT_ID", "unknown")
+            
+            # Map standard logger name to friendly service name
+            service = record.name
+            if "proposers" in name:
+                service = "aiops-proposers"
+            elif "judge" in name:
+                service = "aiops-judge"
+            elif "executor" in name:
+                service = "aiops-executor"
+            elif "graph" in name:
+                service = "aiops-graph"
+            elif "benchmark" in name:
+                service = "aiops-benchmark"
+                
+            doc = {
+                "timestamp": datetime.fromtimestamp(record.created).isoformat(),
+                "level": record.levelname,
+                "service": service,
+                "message": msg,
+                "incident_id": incident_id,
+                "metadata": {
+                    "filename": record.filename,
+                    "lineno": record.lineno,
+                    "funcName": record.funcName,
+                    "realtime": True
+                }
+            }
+            self.queue.put(doc)
+        except Exception:
+            pass
+
+    def _worker(self):
+        while True:
+            try:
+                doc = self.queue.get()
+                if doc is None:
+                    break
+                
+                try:
+                    self.es_client.client.index(index=self.index_name, document=doc)
+                    # Refresh the index to make it instantly visible in Kibana
+                    self.es_client.client.indices.refresh(index=self.index_name)
+                except Exception:
+                    pass
+            except Exception:
+                pass
+            finally:
+                self.queue.task_done()
+
+
+# ============================================================================
 # Log Ingestion Pipeline
 # ============================================================================
 
