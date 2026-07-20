@@ -193,25 +193,18 @@ sequenceDiagram
 
 ## 4. Infrastructure Deployment
 
-The system is deployed using **Docker Compose** with the following components. Two profiles are available:
-- **Full profile** (`docker-compose.yml`): All 5 vLLM containers, ELK Stack, Milvus, Prometheus, Grafana — intended for multi-GPU production environments
-- **Light profile** (`docker-compose.light.yml`): 1 vLLM container + Redis only — intended for single-GPU labs or personal machines
+The system leverages **LM Studio** to host the 5 proposer agent instances (utilizing the `tini-cybersec-8b-a1b` model) on a single local OpenAI-compatible server. 
 
-Each vLLM container exposes an **OpenAI-compatible API** on its respective port, allowing LangChain's `ChatOpenAI` client to connect seamlessly via the `base_url` parameter.
+The supporting services are deployed using **Docker Compose** and include the ELK Stack, Redis, Milvus vector database, Prometheus, and Grafana. The application connects directly to LM Studio via the `LOCAL_LLM_API_BASEURL` endpoint.
 
 ```mermaid
 graph LR
-    subgraph GPU_Cluster["GPU Cluster (vLLM)"]
-        V1["vllm-qwen35<br/>:8000"]
-        V2["vllm-llama4<br/>:8001"]
-        V3["vllm-deepseek<br/>:8002"]
-        V4["vllm-gemma4<br/>:8003"]
-        V5["vllm-r1-distill<br/>:8004"]
+    subgraph Local_Server["Local LLM Server (LM Studio)"]
+        LMS["tini-cybersec-8b-a1b<br/>:1234"]
     end
 
     subgraph Services["Supporting Services"]
         REDIS["Redis<br/>:6379<br/>(Cache + Rate Limit)"]
-        NGINX["Nginx<br/>:8080<br/>(Load Balancer)"]
     end
 
     subgraph Monitoring["Monitoring Stack"]
@@ -228,8 +221,7 @@ graph LR
         MINIO["MinIO"]
     end
 
-    APP["Python App<br/>(main.py)"] --> NGINX
-    NGINX --> V1 & V2 & V3 & V4 & V5
+    APP["Python App<br/>(main.py)"] --> LMS
     APP --> REDIS
     APP --> ES
     APP --> MILVUS
@@ -238,7 +230,7 @@ graph LR
     ES --> KB
     PROM --> GRAF
 
-    style GPU_Cluster fill:#1a1a2e,stroke:#e94560,color:#eee
+    style Local_Server fill:#1a1a2e,stroke:#e94560,color:#eee
     style Services fill:#16213e,stroke:#0f3460,color:#eee
     style Monitoring fill:#0f3460,stroke:#533483,color:#eee
     style VectorDB fill:#533483,stroke:#e94560,color:#eee
@@ -248,12 +240,7 @@ graph LR
 
 | Service | Port | Purpose |
 |---------|------|---------|
-| vllm-qwen36 | 8000 | Qwen 3.6 27B inference (OpenAI-compatible API) |
-| vllm-gptoss | 8001 | GPT OSS 20B inference |
-| vllm-deepseek | 8002 | DeepSeek-V4-Flash inference (used for Judge/Executor) |
-| vllm-gemma4 | 8003 | Gemma 4 26B A4B IT inference |
-| vllm-qwen3-32b | 8004 | Qwen3-32B inference |
-| Nginx | 8080 | Load balancer for vLLM containers |
+| LM Studio | 1234 | tini-cybersec-8b-a1b inference (OpenAI-compatible API) |
 | Redis | 6379 | Response caching and API rate limiting |
 | Elasticsearch | 9200 | Centralized log storage and search |
 | Logstash | 5044 | Log processing pipeline |

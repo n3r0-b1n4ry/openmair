@@ -8,7 +8,7 @@ This system is an advanced AIOps (AI for IT Operations) solution using a Mixture
 
 The system consists of three main types of agents:
 
-1. **Proposers (Candidate Agents)**: State-of-the-art open-source LLMs (Qwen 3.6 27B, GPT OSS 20B, Gemma 4 26B A4B IT, Qwen3-32B) running locally via vLLM, responsible for analyzing incident logs and generating independent RCA reports.
+1. **Proposers (Candidate Agents)**: 5 instances of the `tini-cybersec-8b-a1b` model running locally via LM Studio, configured with diverse hyperparameters (varying temperature up to 0.6, top_k in 40-50, top_p, and repeat_penalty) to maximize analysis perspectives.
 
 2. **Judge (Evaluator Agent)**: A premium/local LLM (DeepSeek-V4-Flash - default, gpt-5.4 - alternative, gpt-5.4-mini - fallback, Gemini 3.1 Pro) acting as a judge, evaluating and synthesizing reports from Proposers to make the final decision.
 
@@ -66,19 +66,15 @@ The entire workflow is orchestrated by LangGraph, maintaining a global state sha
    - Copy the `config.py` file and modify the necessary parameters
    - Ensure `OPENAI_API_KEY` is configured for the Judge Agent
 
-4. Start vLLM services and infrastructure:
-   - **Full** (4+ models, ELK, Milvus, Prometheus, Grafana):
+4. Start LLM Services and supporting infrastructure:
+   - **Load the Proposer Model**: Open LM Studio, download and load the `"tini-cybersec-8b-a1b"` model, and start the local server on the port configured in `.env` (default is 1234, accessed via `LOCAL_LLM_API_BASEURL`).
+   - **Start Supporting Infrastructure** (Redis, ELK Stack, Milvus, Prometheus, Grafana):
      ```bash
      cd infrastructure
      docker-compose up -d
      ```
-   - **Lightweight for single-GPU lab** (1 model + Redis):
-     ```bash
-     cd infrastructure
-     docker-compose -f docker-compose.light.yml up -d
-     ```
    
-   **Note:** The `docker-compose.light.yml` profile only runs 1 vLLM container (e.g., Qwen 3.6 27B) and Redis, suitable for personal machines or labs with a single GPU. To switch models, modify the `model_id` in the `docker-compose.light.yml` file.
+   **Note:** The supporting services (Redis for caching/rate-limiting, ELK for log indexation, etc.) run inside Docker Compose. Ensure LM Studio is active before starting the main application so proposers can connect.
 
 ## Usage
 
@@ -129,11 +125,10 @@ Configuration parameters can be modified in the `config.py` file.
 - `LANGCHAIN_API_KEY`: API key for LangSmith (optional)
 - `LANGCHAIN_PROJECT`: Project name in LangSmith
 
-### vLLM Endpoints (2026)
-- `LLM_API_BASEURL`: Base URL for the vLLM gateway or services.
-- `LLM_API_KEY`: API key for accessing the local models.
+### Local LLM API Base URL (LM Studio)
+- `LOCAL_LLM_API_BASEURL`: Base URL for the local LM Studio server containing the proposer models (default: http://192.168.1.251:1234).
 
-### Model Selection (2026)
+### Model Selection
 - `JUDGE_MODEL`: Model for the Judge Agent (default: DeepSeek-V4-Flash)
 - `JUDGE_ALTERNATIVE`: Alternative model for the Judge (default: gpt-5.4-mini)
 - `GEMINI_PRO_MODEL`: Gemini model for the Judge (default: gemini-3.1-pro)

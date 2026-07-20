@@ -167,23 +167,18 @@ sequenceDiagram
 
 ## 4. Cấu trúc Triển khai Hạ tầng
 
-Hệ thống được triển khai bằng **Docker Compose** với các thành phần sau. Có hai hồ sơ cấu hình có sẵn:
-- **Full profile** (`docker-compose.yml`): Chạy toàn bộ 5 container vLLM, ELK Stack, Milvus, Prometheus, Grafana — dùng cho môi trường sản xuất đa GPU.
-- **Light profile** (`docker-compose.light.yml`): Chỉ chạy 1 container vLLM + Redis — phù hợp cho máy cá nhân hoặc phòng lab chỉ có 1 GPU.
+Hệ thống tận dụng **LM Studio** để lưu trữ 5 thực thể proposer agent (sử dụng mô hình `tini-cybersec-8b-a1b`) trên một máy chủ cục bộ duy nhất tương thích với OpenAI.
+
+Các dịch vụ hỗ trợ được triển khai bằng **Docker Compose** bao gồm ELK Stack, Redis, cơ sở dữ liệu vector Milvus, Prometheus và Grafana. Ứng dụng kết nối trực tiếp đến LM Studio thông qua endpoint `LOCAL_LLM_API_BASEURL`.
 
 ```mermaid
 graph LR
-    subgraph GPU_Cluster["GPU Cluster (vLLM)"]
-        V1["vllm-qwen35<br/>:8000"]
-        V2["vllm-llama4<br/>:8001"]
-        V3["vllm-deepseek<br/>:8002"]
-        V4["vllm-gemma4<br/>:8003"]
-        V5["vllm-r1-distill<br/>:8004"]
+    subgraph Local_Server["Máy chủ LLM cục bộ (LM Studio)"]
+        LMS["tini-cybersec-8b-a1b<br/>:1234"]
     end
 
     subgraph Services["Dịch vụ hỗ trợ"]
         REDIS["Redis<br/>:6379<br/>(Cache + Giới hạn tần suất)"]
-        NGINX["Nginx<br/>:8080<br/>(Cân bằng tải)"]
     end
 
     subgraph Monitoring["Hệ thống giám sát (ELK + Prom/Graf)"]
@@ -200,8 +195,7 @@ graph LR
         MINIO["MinIO"]
     end
 
-    APP["Python App<br/>(main.py)"] --> NGINX
-    NGINX --> V1 & V2 & V3 & V4 & V5
+    APP["Python App<br/>(main.py)"] --> LMS
     APP --> REDIS
     APP --> ES
     APP --> MILVUS
@@ -209,6 +203,11 @@ graph LR
     LS --> ES
     ES --> KB
     PROM --> GRAF
+
+    style Local_Server fill:#1a1a2e,stroke:#e94560,color:#eee
+    style Services fill:#16213e,stroke:#0f3460,color:#eee
+    style Monitoring fill:#0f3460,stroke:#533483,color:#eee
+    style VectorDB fill:#533483,stroke:#e94560,color:#eee
 ```
 
 ---
