@@ -6,8 +6,8 @@ Dự án này xây dựng một hệ thống Tự động phản hồi Sự cố
 
 ## 2. Kiến trúc Tác nhân (Agent Architecture)
 
-* **Candidate Proposers**: Các mô hình LLM mã nguồn mở hàng đầu (Qwen 3.6 27B, GPT OSS 20B, DeepSeek-V4-Flash, Gemma 4 26B A4B IT, Qwen3-32B) được triển khai cục bộ qua vLLM. Các tác nhân này hoạt động song song để phân tích log và tạo ra nhiều báo cáo RCA độc lập.
-* **Oracle Aggregator**: Một mô hình cao cấp (gpt-5.4, gpt-5.4-mini, hoặc Gemini 3.1 Pro). Nhiệm vụ của nó không phải là phân tích từ đầu mà là đánh giá và tổng hợp các báo cáo của Proposer để tạo ra kế hoạch khắc phục sự cố tối ưu nhất.
+* **Candidate Proposers**: 5 phiên bản mô hình tini-cybersec-8b-a1b chạy trên máy chủ LM Studio cục bộ (tương thích OpenAI). Các tác nhân này hoạt động song song với các siêu tham số khác nhau (temperature, top_k, top_p, repeat_penalty) để phân tích log và tạo ra nhiều báo cáo RCA độc lập.
+* **Oracle Aggregator**: Một mô hình cao cấp (DeepSeek-V4-Flash, gpt-5.4, gpt-5.4-mini, hoặc Gemini 3.1 Pro). Nhiệm vụ của nó không phải là phân tích từ đầu mà là đánh giá và tổng hợp các báo cáo của Proposer để tạo ra kế hoạch khắc phục sự cố tối ưu nhất.
 * **Executor Agent**: Chuyển đổi các hành động khắc phục do Judge đề xuất thành các tác vụ lệnh có cấu trúc cụ thể, áp dụng cổng phê duyệt thủ công qua CLI (Human-in-the-Loop) và thực thi chúng.
 * **Orchestrator**: Toàn bộ quy trình làm việc được quản lý bởi LangGraph, duy trì một trạng thái State chung chia sẻ giữa toàn bộ tác nhân.
 
@@ -22,19 +22,17 @@ Dự án này xây dựng một hệ thống Tự động phản hồi Sự cố
 ## 4. Các mô hình LLM được sử dụng
 
 ### Mô hình Proposer (Candidate LLMs)
-1. **Qwen 3.6 27B**
-2. **GPT OSS 20B**
-3. **DeepSeek-V4-Flash**
-4. **Gemma 4 26B A4B IT**
-5. **Qwen3-32B**
+1. **tini-cybersec-8b-a1b (5 phiên bản với cấu hình tham số khác nhau)**
 
 ### Mô hình Judge (Oracle LLM)
-1. **gpt-5.4** - Oracle Judge Mặc định
-2. **gpt-5.4-mini** - Judge Dự phòng
-3. **Gemini 3.1 Pro** - Judge Thay thế
+1. **DeepSeek-V4-Flash** - Oracle Judge Mặc định
+2. **gpt-5.4** - Judge Thay thế
+3. **gpt-5.4-mini** - Judge Dự phòng
+4. **Gemini 3.1 Pro** - Judge Thay thế
 
 ### Mô hình Executor
-1. **gpt-5.4-nano** - Executor Mặc định
+1. **DeepSeek-V4-Flash** - Executor Mặc định
+2. **gpt-5.4-nano** - Executor Thay thế
 
 Xem thêm `MODELS.md` để biết thêm chi tiết.
 

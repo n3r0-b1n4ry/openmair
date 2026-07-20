@@ -6,54 +6,59 @@ The Multi-Agent AIOps system uses a Mixture-of-Agents (MoA) architecture combine
 
 ## Proposer Models (Candidate LLMs)
 
-### 1. Qwen 3.6 27B
-- **Developer**: Alibaba Cloud
-- **Size**: 27 billion parameters
-- **Strengths**: Superior performance in reasoning tasks, optimized for complex log analysis.
-- **Application in the system**: Incident log analysis, solution recommendations.
+All 5 proposers use the **tini-cybersec-8b-a1b** model hosted on a local LLM server (LM Studio), configured with different parameters (temperature, top_k, top_p, and repeat_penalty) to diversify the proposed solutions:
 
-### 2. GPT OSS 20B
-- **Size**: 20 billion parameters
-- **Strengths**: Fast inference, solid benchmark performance for logs and traces.
-- **Application in the system**: Log extraction and reasoning.
+### 1. tini-cybersec-8b-a1b (Proposer 1)
+- **Parameters**: Temperature=0.2, Top K=40, Top P=0.85, Repeat Penalty=1.1
+- **Role**: Highly deterministic security and incident analysis.
 
-### 3. DeepSeek-V4-Flash
-- **Size**: Lightweight Flash Model
-- **Strengths**: High inference speed, optimized for quick and efficient text reasoning.
-- **Application in the system**: Incident log analysis.
+### 2. tini-cybersec-8b-a1b (Proposer 2)
+- **Parameters**: Temperature=0.3, Top K=42, Top P=0.90, Repeat Penalty=1.12
+- **Role**: Balanced and standard incident analysis.
 
-### 4. Gemma 4 26B A4B IT
-- **Developer**: Google
-- **Size**: 26 billion parameters
-- **Strengths**: Strong instruction-tuning, excellent log extraction.
-- **Application in the system**: Complex incident log analysis.
+### 3. tini-cybersec-8b-a1b (Proposer 3)
+- **Parameters**: Temperature=0.4, Top K=45, Top P=0.92, Repeat Penalty=1.15
+- **Role**: Creative but focused root cause analysis.
 
-### 5. Qwen3-32B
-- **Developer**: Alibaba Cloud
-- **Size**: 32 billion parameters
-- **Strengths**: Large model capable of highly detailed technical analysis.
-- **Application in the system**: Root cause analysis and detailed solution generation.
+### 4. tini-cybersec-8b-a1b (Proposer 4)
+- **Parameters**: Temperature=0.5, Top K=48, Top P=0.95, Repeat Penalty=1.18
+- **Role**: High variance alternative resolution options.
+
+### 5. tini-cybersec-8b-a1b (Proposer 5)
+- **Parameters**: Temperature=0.6, Top K=50, Top P=0.98, Repeat Penalty=1.20
+- **Role**: Maximum exploration configuration for corner cases.
 
 ## Judge Model (Oracle LLM)
 
-### 1. gpt-5.4 (Default)
-- **Developer**: OpenAI
-- **Strengths**: Premium reasoning and evaluation capabilities. Acts as the default Judge.
+### 1. DeepSeek-V4-Flash (Default)
+- **Developer**: DeepSeek
+- **Strengths**: High speed, optimized for quick and efficient text reasoning, suitable for evaluation.
 - **Configuration**: Temperature=0.0, Max Tokens=8192
 
-### 2. gpt-5.4-mini (Fallback)
+### 2. gpt-5.4 (Alternative)
+- **Developer**: OpenAI
+- **Strengths**: Premium reasoning and evaluation capabilities.
+- **Configuration**: Temperature=0.0, Max Tokens=8192
+
+### 3. gpt-5.4-mini (Fallback)
 - **Developer**: OpenAI
 - **Strengths**: Faster, highly capable fallback model for the Judge role.
 - **Configuration**: Temperature=0.0, Max Tokens=8192
 
-### 3. Gemini 3.1 Pro (Alternative)
+### 4. Gemini 3.1 Pro (Alternative)
 - **Developer**: Google
 - **Strengths**: Superior multimodal capabilities and massive context window.
 - **Configuration**: Temperature=0.0, Max Tokens=8192
 
 ## Executor Model
 
-### gpt-5.4-nano (Default)
+### 1. DeepSeek-V4-Flash (Default)
+- **Developer**: DeepSeek
+- **Strengths**: Lightweight model optimized for low-latency command parsing.
+- **Application in the system**: Translating Judge recommendations into structured execution actions.
+- **Configuration**: Temperature=0.3, Max Tokens=2048
+
+### 2. gpt-5.4-nano (Alternative)
 - **Developer**: OpenAI
 - **Strengths**: Ultra-lightweight model optimized for low-latency command parsing.
 - **Application in the system**: Translating Judge recommendations into structured execution actions.

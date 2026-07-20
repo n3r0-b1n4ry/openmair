@@ -22,11 +22,11 @@ Hệ thống sử dụng ba loại tác nhân (agent):
 
 | Tác nhân | Vai trò | Mô hình |
 |----------|---------|---------|
-| **Proposers** | Phân tích log sự cố, đề xuất báo cáo phân tích nguyên nhân gốc rễ (RCA) | Qwen 3.6 27B, GPT OSS 20B, DeepSeek-V4-Flash, Gemma 4 26B A4B IT, Qwen3-32B |
-| **Judge** | Đánh giá và tổng hợp các đề xuất | gpt-5.4, gpt-5.4-mini, Gemini 3.1 Pro |
-| **Executor** | Thực hiện hành động khắc phục sự cố | gpt-5.4-nano |
+| **Proposers** | Phân tích log sự cố, đề xuất báo cáo phân tích nguyên nhân gốc rễ (RCA) | tini-cybersec-8b-a1b (5 phiên bản với cấu hình tham số khác nhau) |
+| **Judge** | Đánh giá và tổng hợp các đề xuất | DeepSeek-V4-Flash, gpt-5.4, gpt-5.4-mini, Gemini 3.1 Pro |
+| **Executor** | Thực hiện hành động khắc phục sự cố | DeepSeek-V4-Flash, gpt-5.4-nano |
 
-Tất cả các proposers chạy song song thông qua **vLLM**, được điều phối bởi **LangGraph**.
+Tất cả các proposers chạy song song thông qua **LM Studio** (tương thích OpenAI), được điều phối bởi **LangGraph**.
 
 ## Tài liệu hướng dẫn
 

@@ -74,13 +74,22 @@ Analysis principles:
         provider = model_config.provider.lower()
         
         if provider == "openai":
+            model_kwargs = {}
+            if getattr(model_config, "top_k", None) is not None:
+                model_kwargs["top_k"] = model_config.top_k
+            if getattr(model_config, "top_p", None) is not None:
+                model_kwargs["top_p"] = model_config.top_p
+            if getattr(model_config, "repeat_penalty", None) is not None:
+                model_kwargs["repeat_penalty"] = model_config.repeat_penalty
+
             return ChatOpenAI(
                 model=model_config.model_id,
                 temperature=model_config.temperature,
                 max_tokens=model_config.max_tokens,
                 timeout=model_config.timeout,
                 base_url=model_config.api_base,
-                api_key=model_config.api_key
+                api_key=model_config.api_key,
+                model_kwargs=model_kwargs
             )
         elif provider == "anthropic":
             return ChatAnthropic(
@@ -191,44 +200,44 @@ Analysis principles:
             )
 
 # Concrete classes for each model
-class Qwen35Proposer(BaseProposer):
-    """Proposer using Qwen 3.5 27B - Currently the most powerful open-source model"""
+class TiniCybersecProposer1(BaseProposer):
+    """Proposer 1 using tini-cybersec-8b-a1b"""
     
     def __init__(self):
         config = Config()
-        model_config = config.PROPOSER_MODELS[0]  # Qwen 3.5 27B
+        model_config = config.PROPOSER_MODELS[0]
         super().__init__(model_config)
 
-class Llama4Proposer(BaseProposer):
-    """Proposer using Llama 4 17B - The most popular open-source model"""
+class TiniCybersecProposer2(BaseProposer):
+    """Proposer 2 using tini-cybersec-8b-a1b"""
     
     def __init__(self):
         config = Config()
-        model_config = config.PROPOSER_MODELS[1]  # Llama 4 17B
+        model_config = config.PROPOSER_MODELS[1]
         super().__init__(model_config)
 
-class DevstralProposer(BaseProposer):
-    """Proposer using Devstral Small 2 24B - Chain-of-thought reasoning model"""
+class TiniCybersecProposer3(BaseProposer):
+    """Proposer 3 using tini-cybersec-8b-a1b"""
     
     def __init__(self):
         config = Config()
-        model_config = config.PROPOSER_MODELS[2]  # Devstral Small 2 24B
+        model_config = config.PROPOSER_MODELS[2]
         super().__init__(model_config)
 
-class Gemma4Proposer(BaseProposer):
-    """Proposer using Gemma 4 27B - The latest open-source model"""
+class TiniCybersecProposer4(BaseProposer):
+    """Proposer 4 using tini-cybersec-8b-a1b"""
     
     def __init__(self):
         config = Config()
-        model_config = config.PROPOSER_MODELS[3]  # Gemma 4 27B
+        model_config = config.PROPOSER_MODELS[3]
         super().__init__(model_config)
 
-class DeepSeekR1DistillProposer(BaseProposer):
-    """Proposer using DeepSeek R1 Distill Llama 70B - Powerful reasoning model"""
+class TiniCybersecProposer5(BaseProposer):
+    """Proposer 5 using tini-cybersec-8b-a1b"""
     
     def __init__(self):
         config = Config()
-        model_config = config.PROPOSER_MODELS[4]  # DeepSeek R1 Distill Llama 70B
+        model_config = config.PROPOSER_MODELS[4]
         super().__init__(model_config)
 
 # Factory function to create proposers from configuration

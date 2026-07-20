@@ -23,6 +23,9 @@ class ModelConfig:
     max_tokens: int = 4096
     timeout: int = 60
     provider: str = "openai"  # openai, anthropic, google, deepseek, ollama
+    top_k: Optional[int] = None
+    top_p: Optional[float] = None
+    repeat_penalty: Optional[float] = None
 
 class Config:
     """System configuration class"""
@@ -45,7 +48,7 @@ class Config:
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     
     # Judge Model (Oracle) - Uses premium models
-    JUDGE_MODEL: str = os.getenv("JUDGE_MODEL", "gpt-5.4")  # Default: Claude Opus 4.7
+    JUDGE_MODEL: str = os.getenv("JUDGE_MODEL", "DeepSeek-V4-Flash")  # Default: DeepSeek-V4-Flash
     JUDGE_ALTERNATIVE: str = os.getenv("JUDGE_ALTERNATIVE", "gpt-5.4-mini")  # Fallback: GPT-4o
     
     # Gemini 3.1 Pro for Judge (optional)
@@ -53,59 +56,75 @@ class Config:
     
     # LLM_API_BASEURL configuration
     LLM_API_BASEURL: str = os.getenv("LLM_API_BASEURL", "")
+    LOCAL_LLM_API_BASEURL: str = os.getenv("LOCAL_LLM_API_BASEURL", "")
     LLM_API_KEY: str = os.getenv("LLM_API_KEY") or "mock-llm-key"
 
     # Proposer Models (Candidate LLMs) - State-of-the-art open-source models
     PROPOSER_MODELS: List[ModelConfig] = [
         ModelConfig(
-            name="Qwen 3.6 27B",
-            model_id="Qwen3.6-27B",
-            api_base=LLM_API_BASEURL,
-            api_key=LLM_API_KEY,
-            temperature=0.7,
+            name="tini-cybersec Proposer 1",
+            model_id="tini-cybersec-8b-a1b",
+            api_base=LOCAL_LLM_API_BASEURL,
+            api_key="lm-studio",
+            temperature=0.2,
             max_tokens=8192,
-            provider="openai"
+            provider="openai",
+            top_k=40,
+            top_p=0.85,
+            repeat_penalty=1.1
         ),
         ModelConfig(
-            name="GPT OSS 20B",
-            model_id="gpt-oss-20b",
-            api_base=LLM_API_BASEURL,
-            api_key=LLM_API_KEY,
-            temperature=0.7,
+            name="tini-cybersec Proposer 2",
+            model_id="tini-cybersec-8b-a1b",
+            api_base=LOCAL_LLM_API_BASEURL,
+            api_key="lm-studio",
+            temperature=0.3,
             max_tokens=8192,
-            provider="openai"
+            provider="openai",
+            top_k=42,
+            top_p=0.90,
+            repeat_penalty=1.12
         ),
         ModelConfig(
-            name="DeepSeek-V4-Flash",
-            model_id="DeepSeek-V4-Flash",
-            api_base=LLM_API_BASEURL,
-            api_key=LLM_API_KEY,
-            temperature=0.7,
+            name="tini-cybersec Proposer 3",
+            model_id="tini-cybersec-8b-a1b",
+            api_base=LOCAL_LLM_API_BASEURL,
+            api_key="lm-studio",
+            temperature=0.4,
             max_tokens=8192,
-            provider="openai"
+            provider="openai",
+            top_k=45,
+            top_p=0.92,
+            repeat_penalty=1.15
         ),
         ModelConfig(
-            name="Gemma 4 26B A4B IT",
-            model_id="gemma-4-26B-A4B-it",
-            api_base=LLM_API_BASEURL,
-            api_key=LLM_API_KEY,
-            temperature=0.7,
+            name="tini-cybersec Proposer 4",
+            model_id="tini-cybersec-8b-a1b",
+            api_base=LOCAL_LLM_API_BASEURL,
+            api_key="lm-studio",
+            temperature=0.5,
             max_tokens=8192,
-            provider="openai"
+            provider="openai",
+            top_k=48,
+            top_p=0.95,
+            repeat_penalty=1.18
         ),
         ModelConfig(
-            name="Qwen3-32B",
-            model_id="Qwen3-32B",
-            api_base=LLM_API_BASEURL,
-            api_key=LLM_API_KEY,
-            temperature=0.7,
+            name="tini-cybersec Proposer 5",
+            model_id="tini-cybersec-8b-a1b",
+            api_base=LOCAL_LLM_API_BASEURL,
+            api_key="lm-studio",
+            temperature=0.6,
             max_tokens=8192,
-            provider="openai"
+            provider="openai",
+            top_k=50,
+            top_p=0.98,
+            repeat_penalty=1.20
         ),
     ]
     
     # Executor Model (lightweight model for execution)
-    EXECUTOR_MODEL: str = os.getenv("EXECUTOR_MODEL", "gpt-5.4-nano")
+    EXECUTOR_MODEL: str = os.getenv("EXECUTOR_MODEL", "DeepSeek-V4-Flash")
     AUTO_APPROVE_REMEDIATION: bool = os.getenv("AUTO_APPROVE_REMEDIATION", "false").lower() == "true"
     MOCK_REMEDIATION: bool = os.getenv("MOCK_REMEDIATION", "true").lower() == "true"
     

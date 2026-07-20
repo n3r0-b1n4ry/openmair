@@ -2,6 +2,14 @@
 
 ---
 
+## [2026-07-20] Cập nhật mô hình Proposer: tini-cybersec-8b-a1b
+- **Cập nhật mô hình Proposer**: Chuyển đổi toàn bộ các proposer sang sử dụng mô hình `"tini-cybersec-8b-a1b"` chạy cục bộ trên LM Studio (`LOCAL_LLM_API_BASEURL`).
+- **Tham số đa dạng**: Cấu hình 5 proposer hoạt động song song với các tham số thiết lập riêng biệt (nhiệt độ temperature tối đa 0.6, top_k từ 40-50, top_p, và repeat_penalty) được truyền qua tham số `model_kwargs` của LangChain `ChatOpenAI`.
+
+## [2026-07-20] Di chuyển vai trò mô hình: DeepSeek-V4-Flash
+- **Di chuyển vai trò**: Di chuyển mô hình `"DeepSeek-V4-Flash"` từ danh sách Proposers sang làm mô hình mặc định cho Judge Agent và Executor Agent.
+- **Tích hợp Judge**: Cập nhật hàm khởi tạo `JudgeAgent` để hỗ trợ các tham số `base_url` và `api_key` tùy chỉnh cho các endpoint tương thích OpenAI, cho phép sử dụng các mô hình cục bộ hoặc tùy chỉnh như `DeepSeek-V4-Flash`.
+
 ## [2026-06-14] Tích hợp Executor Agent, Log Real-time và Nâng cấp Dashboard
 - **Executor Agent**: Xây dựng thành phần `ExecutorAgent` để dịch các khuyến nghị hành động của Judge thành các lệnh có cấu trúc thực tế, tích hợp cơ chế phê duyệt thủ công qua CLI (Human-in-the-Loop) trước khi chạy lệnh.
 - **Log Real-time lên Elasticsearch**: Thêm handler `ElasticsearchLogHandler` chạy bất đồng bộ dựa trên queue để truyền phát trực tiếp log suy luận của agent và log thực thi của executor lên Elasticsearch.

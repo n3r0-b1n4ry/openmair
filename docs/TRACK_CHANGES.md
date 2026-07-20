@@ -2,6 +2,14 @@
 
 ---
 
+## [2026-07-20] Proposer Model Update: tini-cybersec-8b-a1b
+- **Proposer Model Update**: Changed all proposers to use the `"tini-cybersec-8b-a1b"` model hosted locally on LM Studio (`LOCAL_LLM_API_BASEURL`).
+- **Diverse Hyperparameters**: Configured 5 parallel proposers with distinct setup parameters (varying temperature up to 0.6, top_k in the 40-50 range, top_p, and repeat_penalty) passed via `model_kwargs` to LangChain `ChatOpenAI`.
+
+## [2026-07-20] Model Role Migration: DeepSeek-V4-Flash
+- **Model Migration**: Moved `"DeepSeek-V4-Flash"` from the Proposers list to be the default Judge Agent model and the default Executor Agent model.
+- **Judge Integration**: Updated `JudgeAgent` initialization to support custom `base_url` and `api_key` for OpenAI-compatible endpoints, enabling the use of local/custom models like `DeepSeek-V4-Flash`.
+
 ## [2026-06-14] Integration of Executor Agent, Real-time Logging, and Dashboard Updates
 - **Executor Agent**: Implemented `ExecutorAgent` to translate Judge remediation recommendations into concrete actions, adding Human-in-the-Loop CLI validation before executing scripts/commands.
 - **Real-time Logging Pipeline**: Added queue-based asynchronous `ElasticsearchLogHandler` to stream live agent reasoning and executor action traces to Elasticsearch.

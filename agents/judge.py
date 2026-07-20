@@ -73,15 +73,27 @@ class JudgeAgent:
             )
             logger.info(f"Initialized Judge Agent with Gemini model: {model_name}")
         else:
-            # Use OpenAI directly for Judge
+            # Check if we should use custom API base (vLLM or other gateway)
+            # Standard OpenAI models (like gpt-4o-mini) should use the direct OpenAI API endpoint.
+            is_openai_model = model_name.lower().startswith("gpt-") or "text-davinci" in model_name.lower()
+            
+            if is_openai_model:
+                api_base = None
+                api_key = config.OPENAI_API_KEY
+            else:
+                api_base = config.LLM_API_BASEURL if config.LLM_API_BASEURL else None
+                api_key = config.LLM_API_KEY if config.LLM_API_KEY else config.OPENAI_API_KEY
+
+            # Use OpenAI directly or custom vLLM endpoint for Judge
             self.model = ChatOpenAI(
                 model=model_name,
                 temperature=temperature,
                 max_tokens=8192,
                 timeout=120,
-                api_key=config.OPENAI_API_KEY
+                base_url=api_base,
+                api_key=api_key
             )
-            logger.info(f"Initialized Judge Agent with OpenAI model: {model_name}")
+            logger.info(f"Initialized Judge Agent with OpenAI/vLLM model: {model_name}")
         
         # Define output schema
         from pydantic import BaseModel, Field

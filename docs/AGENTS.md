@@ -6,8 +6,8 @@ This project builds an Automated Incident Response system (AIOps). The system in
 
 ## 2. Agent Architecture
 
-* **Candidate Proposers**: State-of-the-art open-source LLMs (Qwen 3.6 27B, GPT OSS 20B, DeepSeek-V4-Flash, Gemma 4 26B A4B IT, Qwen3-32B) deployed locally via vLLM. These agents operate in parallel to analyze logs and generate multiple independent RCA reports.
-* **Oracle Aggregator**: A premium model (gpt-5.4, gpt-5.4-mini, or Gemini 3.1 Pro). Its task is not to analyze from scratch, but to evaluate and synthesize the Proposers' reports, producing the optimal remediation plan.
+* **Candidate Proposers**: 5 instances of the tini-cybersec-8b-a1b model running on a local LM Studio server (OpenAI compatible). These agents operate in parallel using varied hyperparameters (temperature, top_k, top_p, repeat_penalty) to analyze logs and generate multiple independent RCA reports.
+* **Oracle Aggregator**: A premium model (DeepSeek-V4-Flash, gpt-5.4, gpt-5.4-mini, or Gemini 3.1 Pro). Its task is not to analyze from scratch, but to evaluate and synthesize the Proposers' reports, producing the optimal remediation plan.
 * **Executor Agent**: Translates the Judge's recommended actions into structured executable tasks, applies the Human-in-the-Loop CLI approval gating, and runs them.
 * **Orchestrator**: The entire workflow is managed by LangGraph, maintaining a global State shared across all agents.
 
@@ -22,19 +22,17 @@ This project builds an Automated Incident Response system (AIOps). The system in
 ## 4. LLM Models Used
 
 ### Proposer Models (Candidate LLMs)
-1. **Qwen 3.6 27B**
-2. **GPT OSS 20B**
-3. **DeepSeek-V4-Flash**
-4. **Gemma 4 26B A4B IT**
-5. **Qwen3-32B**
+1. **tini-cybersec-8b-a1b (x5 with varied parameters)**
 
 ### Judge Model (Oracle LLM)
-1. **gpt-5.4** - Default Oracle Judge
-2. **gpt-5.4-mini** - Fallback Judge
-3. **Gemini 3.1 Pro** - Alternative Judge
+1. **DeepSeek-V4-Flash** - Default Oracle Judge
+2. **gpt-5.4** - Alternative Judge
+3. **gpt-5.4-mini** - Fallback Judge
+4. **Gemini 3.1 Pro** - Alternative Judge
 
 ### Executor Model
-1. **gpt-5.4-nano** - Default Executor Model
+1. **DeepSeek-V4-Flash** - Default Executor Model
+2. **gpt-5.4-nano** - Alternative Executor Model
 
 See `MODELS.md` for more details.
 

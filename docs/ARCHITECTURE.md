@@ -16,22 +16,24 @@ graph TB
         LOGS["📋 Incident Logs<br/>(Real-time from Microservices)"]
     end
 
-    subgraph Proposers["Proposer Agents (Candidate LLMs via vLLM)"]
-        P1["Qwen 3.6 27B"]
-        P2["GPT OSS 20B"]
-        P3["DeepSeek-V4-Flash"]
-        P4["Gemma 4 26B A4B IT"]
-        P5["Qwen3-32B"]
+    subgraph Proposers["Proposer Agents (tini-cybersec-8b-a1b via LM Studio)"]
+        P1["tini-cybersec-8b-a1b<br/>(temp=0.2, top_k=40)"]
+        P2["tini-cybersec-8b-a1b<br/>(temp=0.3, top_k=42)"]
+        P3["tini-cybersec-8b-a1b<br/>(temp=0.4, top_k=45)"]
+        P4["tini-cybersec-8b-a1b<br/>(temp=0.5, top_k=48)"]
+        P5["tini-cybersec-8b-a1b<br/>(temp=0.6, top_k=50)"]
     end
 
     subgraph Judge["Judge Agent (Oracle LLM)"]
-        J1["gpt-5.4<br/>(default)"]
-        J2["gpt-5.4-mini<br/>(fallback)"]
-        J3["Gemini 3.1 Pro<br/>(alternative)"]
+        J1["DeepSeek-V4-Flash<br/>(default)"]
+        J2["gpt-5.4<br/>(alternative)"]
+        J3["gpt-5.4-mini<br/>(fallback)"]
+        J4["Gemini 3.1 Pro<br/>(alternative)"]
     end
 
     subgraph Executor["Executor Agent"]
-        E1["gpt-5.4-nano"]
+        E1["DeepSeek-V4-Flash<br/>(default)"]
+        E2["gpt-5.4-nano<br/>(alternative)"]
     end
 
     subgraph Orchestrator["LangGraph Orchestrator"]
@@ -57,9 +59,9 @@ graph TB
 
 | Component | Description | Models |
 |-----------|-------------|--------|
-| **Proposers** | 5 open-source LLMs deployed locally via vLLM. They run in parallel to maximize diversity of analysis perspectives. | Qwen 3.6 27B, GPT OSS 20B, DeepSeek-V4-Flash, Gemma 4 26B A4B IT, Qwen3-32B |
-| **Judge** | A single premium LLM that acts as an oracle. It does not analyze from scratch — instead it evaluates, compares, and synthesizes the Proposers' outputs. | gpt-5.4 (default), gpt-5.4-mini (fallback), Gemini 3.1 Pro (alternative) |
-| **Executor** | A lightweight model that translates the Judge's final report into concrete remediation actions (e.g., API calls, scripts, restarts). | gpt-5.4-nano |
+| **Proposers** | 5 instances of the tini-cybersec-8b-a1b model running in parallel on a local LM Studio server. Each instance uses unique hyperparameters (temperature, top_k, top_p, repeat_penalty) to diversify analysis perspectives. | tini-cybersec-8b-a1b (x5 with varied parameters) |
+| **Judge** | A single premium/local LLM that acts as an oracle. It does not analyze from scratch — instead it evaluates, compares, and synthesizes the Proposers' outputs. | DeepSeek-V4-Flash (default), gpt-5.4 (alternative), gpt-5.4-mini (fallback), Gemini 3.1 Pro (alternative) |
+| **Executor** | A lightweight/local model that translates the Judge's final report into concrete remediation actions (e.g., API calls, scripts, restarts). | DeepSeek-V4-Flash (default), gpt-5.4-nano (alternative) |
 | **Orchestrator** | LangGraph-based state machine that maintains a shared `AIOpsState` and routes data between agents using conditional edges. | — |
 
 ---
@@ -140,13 +142,13 @@ The Judge applies several **anti-bias techniques** before evaluation:
 sequenceDiagram
     participant User as User/System
     participant Orch as LangGraph Orchestrator
-    participant P1 as Qwen 3.6 27B
-    participant P2 as GPT OSS 20B
-    participant P3 as DeepSeek-V4-Flash
-    participant P4 as Gemma 4 26B A4B IT
-    participant P5 as Qwen3-32B
-    participant Judge as Judge (gpt-5.4)
-    participant Exec as Executor (gpt-5.4-nano)
+    participant P1 as tini-cybersec-8b-a1b (temp=0.2)
+    participant P2 as tini-cybersec-8b-a1b (temp=0.3)
+    participant P3 as tini-cybersec-8b-a1b (temp=0.4)
+    participant P4 as tini-cybersec-8b-a1b (temp=0.5)
+    participant P5 as tini-cybersec-8b-a1b (temp=0.6)
+    participant Judge as Judge (DeepSeek-V4-Flash)
+    participant Exec as Executor (DeepSeek-V4-Flash)
 
     User->>Orch: Submit incident logs
     
@@ -248,7 +250,7 @@ graph LR
 |---------|------|---------|
 | vllm-qwen36 | 8000 | Qwen 3.6 27B inference (OpenAI-compatible API) |
 | vllm-gptoss | 8001 | GPT OSS 20B inference |
-| vllm-deepseek | 8002 | DeepSeek-V4-Flash inference |
+| vllm-deepseek | 8002 | DeepSeek-V4-Flash inference (used for Judge/Executor) |
 | vllm-gemma4 | 8003 | Gemma 4 26B A4B IT inference |
 | vllm-qwen3-32b | 8004 | Qwen3-32B inference |
 | Nginx | 8080 | Load balancer for vLLM containers |

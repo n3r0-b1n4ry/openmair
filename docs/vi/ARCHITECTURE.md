@@ -16,22 +16,24 @@ graph TB
         LOGS["📋 Log Sự cố<br/>(Thời gian thực từ Microservices)"]
     end
 
-    subgraph Proposers["Tác nhân Proposer (Các LLM ứng viên qua vLLM)"]
-        P1["Qwen 3.6 27B"]
-        P2["GPT OSS 20B"]
-        P3["DeepSeek-V4-Flash"]
-        P4["Gemma 4 26B A4B IT"]
-        P5["Qwen3-32B"]
+    subgraph Proposers["Tác nhân Proposer (tini-cybersec-8b-a1b qua LM Studio)"]
+        P1["tini-cybersec-8b-a1b<br/>(temp=0.2, top_k=40)"]
+        P2["tini-cybersec-8b-a1b<br/>(temp=0.3, top_k=42)"]
+        P3["tini-cybersec-8b-a1b<br/>(temp=0.4, top_k=45)"]
+        P4["tini-cybersec-8b-a1b<br/>(temp=0.5, top_k=48)"]
+        P5["tini-cybersec-8b-a1b<br/>(temp=0.6, top_k=50)"]
     end
 
     subgraph Judge["Tác nhân Judge (LLM Trọng tài)"]
-        J1["gpt-5.4<br/>(mặc định)"]
-        J2["gpt-5.4-mini<br/>(dự phòng)"]
-        J3["Gemini 3.1 Pro<br/>(thay thế)"]
+        J1["DeepSeek-V4-Flash<br/>(mặc định)"]
+        J2["gpt-5.4<br/>(thay thế)"]
+        J3["gpt-5.4-mini<br/>(dự phòng)"]
+        J4["Gemini 3.1 Pro<br/>(thay thế)"]
     end
 
     subgraph Executor["Tác nhân Executor"]
-        E1["gpt-5.4-nano"]
+        E1["DeepSeek-V4-Flash<br/>(mặc định)"]
+        E2["gpt-5.4-nano<br/>(thay thế)"]
     end
 
     subgraph Orchestrator["Bộ điều phối LangGraph"]
@@ -57,9 +59,9 @@ graph TB
 
 | Thành phần | Mô tả | Các mô hình sử dụng |
 |------------|-------|---------------------|
-| **Proposers** | 5 mô hình LLM mã nguồn mở được chạy cục bộ qua vLLM. Chúng hoạt động song song để đa dạng hóa góc nhìn phân tích. | Qwen 3.6 27B, GPT OSS 20B, DeepSeek-V4-Flash, Gemma 4 26B A4B IT, Qwen3-32B |
-| **Judge** | Một LLM thương mại cao cấp đóng vai trò trọng tài. Mô hình này không phân tích log từ đầu mà đánh giá, đối chiếu và tổng hợp các đề xuất từ Proposers. | gpt-5.4 (mặc định), gpt-5.4-mini (dự phòng), Gemini 3.1 Pro (thay thế) |
-| **Executor** | Mô hình siêu nhẹ giúp chuyển đổi báo cáo cuối cùng của Judge thành các lệnh thực thi cụ thể (như gọi API, chạy script, khởi động lại dịch vụ). | gpt-5.4-nano |
+| **Proposers** | 5 phiên bản mô hình tini-cybersec-8b-a1b hoạt động song song trên máy chủ LM Studio cục bộ. Mỗi phiên bản cấu hình các siêu tham số (temperature, top_k, top_p, repeat_penalty) khác nhau nhằm đa dạng hóa góc nhìn phân tích. | tini-cybersec-8b-a1b (x5 với cấu hình tham số khác nhau) |
+| **Judge** | Một LLM thương mại/cục bộ đóng vai trò trọng tài. Mô hình này không phân tích log từ đầu mà đánh giá, đối chiếu và tổng hợp các đề xuất từ Proposers. | DeepSeek-V4-Flash (mặc định), gpt-5.4 (thay thế), gpt-5.4-mini (dự phòng), Gemini 3.1 Pro (thay thế) |
+| **Executor** | Mô hình siêu nhẹ giúp chuyển đổi báo cáo cuối cùng của Judge thành các lệnh thực thi cụ thể (như gọi API, chạy script, khởi động lại dịch vụ). | DeepSeek-V4-Flash (mặc định), gpt-5.4-nano (thay thế) |
 | **Orchestrator** | Máy trạng thái (state machine) dựa trên LangGraph giúp duy trì trạng thái chia sẻ `AIOpsState` và điều hướng dữ liệu giữa các tác nhân thông qua các liên kết điều kiện. | — |
 
 ---
@@ -106,19 +108,6 @@ stateDiagram-v2
         Phê duyệt thủ công qua CLI (Human-in-the-Loop)
         trước khi chạy bất kỳ hành động nào
     end note
-```
-
-**Các trường dữ liệu trạng thái (State fields)** (định nghĩa trong `orchestrator/state.py`):
-
-| Trường | Kiểu dữ liệu | Mô tả |
-|--------|--------------|-------|
-| `incident_logs` | `str` | Nội dung log sự cố thô từ hệ thống giám sát |
-| `proposals` | `Annotated[list, operator.add]` | Danh sách các đề xuất RCA được gom lại từ tất cả Proposers (sử dụng LangGraph reducer) |
-| `evaluations` | `Annotated[list, operator.add]` | Các đánh giá của Judge (điểm số, suy luận, báo cáo cuối cùng) |
-| `final_report` | `Optional[IncidentReport]` | Báo cáo tối ưu được tổng hợp lại sau khi Judge đánh giá |
-| `executed_actions` | `Annotated[list, operator.add]` | Danh sách các hành động khắc phục đã được Executor thực thi |
-
----
 
 ## 3. Trình tự Xử lý Sự cố (Incident Processing Sequence)
 
@@ -133,13 +122,13 @@ Tác nhân Judge áp dụng một số **kỹ thuật chống định kiến (an
 sequenceDiagram
     participant User as Người dùng/Hệ thống
     participant Orch as Bộ điều phối LangGraph
-    participant P1 as Qwen 3.6 27B
-    participant P2 as GPT OSS 20B
-    participant P3 as DeepSeek-V4-Flash
-    participant P4 as Gemma 4 26B A4B IT
-    participant P5 as Qwen3-32B
-    participant Judge as Judge (gpt-5.4)
-    participant Exec as Executor (gpt-5.4-nano)
+    participant P1 as tini-cybersec-8b-a1b (temp=0.2)
+    participant P2 as tini-cybersec-8b-a1b (temp=0.3)
+    participant P3 as tini-cybersec-8b-a1b (temp=0.4)
+    participant P4 as tini-cybersec-8b-a1b (temp=0.5)
+    participant P5 as tini-cybersec-8b-a1b (temp=0.6)
+    participant Judge as Judge (DeepSeek-V4-Flash)
+    participant Exec as Executor (DeepSeek-V4-Flash)
 
     User->>Orch: Gửi log sự cố
     
